@@ -19,6 +19,13 @@ struct ContentView: View {
                     Label("设备", systemImage: "desktopcomputer")
                 }
                 .listRowSeparator(.hidden)
+
+                NavigationLink {
+                    AppsView()
+                } label: {
+                    Label("应用", systemImage: "square.grid.2x2")
+                }
+                .listRowSeparator(.hidden)
             }
 #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
