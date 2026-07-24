@@ -64,7 +64,6 @@ struct DevicesView: View {
         .contentMargins(.horizontal, 20, for: .scrollContent)
         .contentMargins(.vertical, 20, for: .scrollContent)
         .navigationTitle("设备")
-        .searchable(text: $searchText, placement: .toolbar, prompt: "搜索")
         .toolbar {
 #if os(visionOS)
             ToolbarItem(placement: .primaryAction) {
