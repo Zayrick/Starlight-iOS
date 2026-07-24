@@ -13,5 +13,8 @@ struct StarlightApp: App {
         WindowGroup {
             ContentView()
         }
+#if os(macOS)
+        .windowToolbarStyle(.unified(showsTitle: false))
+#endif
     }
 }
