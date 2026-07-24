@@ -103,14 +103,14 @@ private struct DeviceCard: View {
                 .fill(.white.opacity(0.12))
                 .frame(width: 190, height: 190)
                 .scaleEffect(isHovered ? 1.12 : 1)
-                .offset(x: 115, y: -90)
+                .offset(x: 115, y: 90)
                 .blur(radius: 2)
 
             Circle()
                 .fill(.white.opacity(0.08))
                 .frame(width: 110, height: 110)
                 .scaleEffect(isHovered ? 1.16 : 1)
-                .offset(x: -145, y: 95)
+                .offset(x: -145, y: -95)
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 6) {
