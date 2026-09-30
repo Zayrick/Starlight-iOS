@@ -9,6 +9,10 @@ struct DeviceDetailView: View {
     let hostID: String
 
     @Environment(HostStore.self) private var hostStore
+    @Environment(StreamController.self) private var streamController
+    /// App waiting for confirmation to replace the one running on the host.
+    @State private var pendingLaunch: StreamApp?
+    @State private var quitErrorMessage: String?
 
     private let columns = [
         GridItem(.adaptive(minimum: 130, maximum: 180), spacing: 20)
@@ -71,12 +75,7 @@ struct DeviceDetailView: View {
             ScrollView {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
                     ForEach(host.apps) { app in
-                        AppTile(
-                            app: app,
-                            hostID: host.id,
-                            isConnected: host.isOnline && host.isPaired,
-                            isRunning: host.currentGameID == app.id
-                        )
+                        appButton(app, on: host)
                     }
                 }
             }
@@ -86,9 +85,76 @@ struct DeviceDetailView: View {
                     emptyAppsView(for: host)
                 }
             }
+            .confirmationDialog(
+                runningAppTitle(for: host),
+                isPresented: Binding {
+                    pendingLaunch != nil
+                } set: { isPresented in
+                    if !isPresented {
+                        pendingLaunch = nil
+                    }
+                },
+                titleVisibility: .visible,
+                presenting: pendingLaunch
+            ) { app in
+                Button("退出并启动 \(app.name)", role: .destructive) {
+                    streamController.start(host: host, app: app, quitsRunningApp: true)
+                }
+            } message: { _ in
+                Text("主机同一时间只能运行一个应用，未保存的进度将会丢失。")
+            }
+            .alert(
+                "无法退出应用",
+                isPresented: Binding {
+                    quitErrorMessage != nil
+                } set: { isPresented in
+                    if !isPresented {
+                        quitErrorMessage = nil
+                    }
+                }
+            ) {
+                Button("好") {}
+            } message: {
+                Text(quitErrorMessage ?? "")
+            }
         } else {
             pairPrompt(for: host)
         }
+    }
+
+    private func appButton(_ app: StreamApp, on host: StreamHost) -> some View {
+        let isConnected = host.isOnline && host.isPaired
+        let isRunning = host.currentGameID == app.id
+
+        return Button {
+            if let runningID = host.currentGameID, runningID != app.id {
+                pendingLaunch = app
+            } else {
+                streamController.start(host: host, app: app)
+            }
+        } label: {
+            AppTile(app: app, hostID: host.id, isConnected: isConnected, isRunning: isRunning)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isConnected)
+        .contextMenu {
+            if isRunning {
+                Button("退出应用", systemImage: "power", role: .destructive) {
+                    Task {
+                        do {
+                            try await hostStore.quitApp(hostID: host.id)
+                        } catch {
+                            quitErrorMessage = error.localizedDescription
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func runningAppTitle(for host: StreamHost) -> String {
+        let name = host.apps.first { $0.id == host.currentGameID }?.name ?? "其他应用"
+        return "“\(name)”正在运行"
     }
 
     @ViewBuilder
@@ -196,4 +262,5 @@ private extension ToolbarContent {
         DeviceDetailView(hostID: "preview")
     }
     .environment(HostStore())
+    .environment(StreamController())
 }

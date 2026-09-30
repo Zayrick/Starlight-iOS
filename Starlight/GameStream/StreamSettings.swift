@@ -51,6 +51,35 @@ nonisolated enum StreamSettings {
     }
 }
 
+/// The settings a session starts with, read from what SettingsView stores.
+nonisolated struct ResolvedStreamSettings: Sendable {
+    var size: PixelSize
+    var frameRate: Int
+    var bitrateKbps: Int
+    var codec: VideoCodecPreference
+    var hdr: Bool
+    var colorRange: StreamColorRange
+    var audio: StreamAudioConfiguration
+
+    @MainActor
+    static func load(from defaults: UserDefaults = .standard) -> ResolvedStreamSettings {
+        typealias Key = StreamSettings.Key
+        let resolution = defaults.string(forKey: Key.resolution).flatMap(StreamResolution.init(rawValue:))
+            ?? StreamSettings.defaultResolution
+        let frameRate = defaults.object(forKey: Key.frameRate) as? Int ?? StreamSettings.defaultFrameRate
+        let bitrate = defaults.object(forKey: Key.bitrateKbps) as? Int ?? StreamSettings.defaultBitrateKbps
+        return ResolvedStreamSettings(
+            size: resolution.pixelSize,
+            frameRate: frameRate,
+            bitrateKbps: min(max(bitrate, StreamSettings.bitrateRangeKbps.lowerBound), StreamSettings.bitrateRangeKbps.upperBound),
+            codec: defaults.string(forKey: Key.codec).flatMap(VideoCodecPreference.init(rawValue:)) ?? .auto,
+            hdr: defaults.bool(forKey: Key.hdr),
+            colorRange: defaults.string(forKey: Key.colorRange).flatMap(StreamColorRange.init(rawValue:)) ?? .limited,
+            audio: defaults.string(forKey: Key.audio).flatMap(StreamAudioConfiguration.init(rawValue:)) ?? .stereo
+        )
+    }
+}
+
 nonisolated struct PixelSize: Hashable, Sendable {
     var width: Int
     var height: Int
@@ -137,6 +166,27 @@ nonisolated enum VideoCodecPreference: String, CaseIterable, Identifiable {
         case .hevc: VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)
         case .av1: VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1)
         }
+    }
+
+    /// The formats to offer the host. The host picks AV1 over HEVC over H.264,
+    /// so this decides the codec while keeping fallbacks the device can decode.
+    func videoFormats(hdr: Bool) -> VideoFormats {
+        var formats: VideoFormats = .h264
+        guard self != .h264 else { return formats }
+
+        if VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC) {
+            formats.insert(.hevc)
+            if hdr {
+                formats.insert(.hevcMain10)
+            }
+        }
+        if self == .av1, VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1) {
+            formats.insert(.av1Main8)
+            if hdr {
+                formats.insert(.av1Main10)
+            }
+        }
+        return formats
     }
 }
 

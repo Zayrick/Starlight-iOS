@@ -71,6 +71,65 @@ nonisolated struct GameStreamClient: Sendable {
         return data
     }
 
+    /// Starts an app, or reconnects to the running one when `resume` is set,
+    /// and returns the RTSP session URL if the host provided one.
+    func launch(_ launch: LaunchRequest, resume: Bool, server: ServerInfo) async throws -> String? {
+        // GFE falls back to 720p60 for frame rates over 60, while 0 keeps the
+        // requested resolution. Sunshine handles any frame rate.
+        let fps = launch.fps > 60 && !server.isSunshine ? 0 : launch.fps
+
+        var query = [
+            URLQueryItem(name: "appid", value: launch.appID),
+            URLQueryItem(name: "mode", value: "\(launch.width)x\(launch.height)x\(fps)"),
+            URLQueryItem(name: "additionalStates", value: "1"),
+            URLQueryItem(name: "sops", value: launch.optimizeGameSettings ? "1" : "0"),
+            URLQueryItem(name: "rikey", value: launch.remoteInputKey.hexString),
+            URLQueryItem(name: "rikeyid", value: String(Int32(bitPattern: launch.remoteInputKeyID))),
+        ]
+        if launch.hdr {
+            query += [
+                URLQueryItem(name: "hdrMode", value: "1"),
+                URLQueryItem(name: "clientHdrCapVersion", value: "0"),
+                URLQueryItem(name: "clientHdrCapSupportedFlagsInUint32", value: "0"),
+                URLQueryItem(name: "clientHdrCapMetaDataId", value: "NV_STATIC_METADATA_TYPE_1"),
+                URLQueryItem(name: "clientHdrCapDisplayData", value: "0x0x0x0x0x0x0x0x0x0x0"),
+            ]
+        }
+        query += [
+            URLQueryItem(name: "localAudioPlayMode", value: launch.playAudioOnHost ? "1" : "0"),
+            URLQueryItem(name: "surroundAudioInfo", value: String(launch.surroundAudioInfo)),
+            // No controllers are forwarded yet
+            URLQueryItem(name: "remoteControllersBitmap", value: "0"),
+            URLQueryItem(name: "gcmap", value: "0"),
+            URLQueryItem(name: "gcpersist", value: "0"),
+        ]
+        query += launch.extraQuery
+            .split(separator: "&")
+            .map { pair in
+                let parts = pair.split(separator: "=", maxSplits: 1)
+                return URLQueryItem(name: String(parts[0]), value: parts.count > 1 ? String(parts[1]) : nil)
+            }
+
+        // This blocks while the host starts the app
+        let xml = try await request(secure: true, resume ? "/resume" : "/launch", query: query, timeout: 120)
+        let succeeded = resume
+            ? xml.text("resume").map { $0 != "0" } ?? false
+            : xml.text("gamesession").map { $0 != "0" } ?? false
+        guard succeeded else {
+            throw GameStreamError.server(code: 0, message: resume ? "无法恢复应用" : "无法启动应用")
+        }
+        return xml.text("sessionUrl0").flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// Quits the app running on the host.
+    func quitApp() async throws {
+        let xml = try await request(secure: true, "/cancel", timeout: 30)
+        // GFE reports success but keeps running apps started by another client
+        if xml.text("cancel") == "0" {
+            throw GameStreamError.server(code: 0, message: "主机拒绝退出应用")
+        }
+    }
+
     func pair(_ query: [URLQueryItem], secure: Bool = false, timeout: TimeInterval = 10) async throws -> XMLTree {
         let base = [
             URLQueryItem(name: "devicename", value: Self.deviceName),

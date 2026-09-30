@@ -1,0 +1,6 @@
+[submodule "Packages/MoonlightCore/Sources/MoonlightCommon/moonlight-common-c"]
+	path = Packages/MoonlightCore/Sources/MoonlightCommon/moonlight-common-c
+	url = https://github.com/moonlight-stream/moonlight-common-c.git
+[submodule "Packages/MoonlightCore/Sources/COpus/opus"]
+	path = Packages/MoonlightCore/Sources/COpus/opus
+	url = https://github.com/xiph/opus.git

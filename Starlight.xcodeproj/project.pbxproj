@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F7A0000230024E9000576CC6 /* MoonlightBridge in Frameworks */ = {isa = PBXBuildFile; productRef = F7A0000330024E9000576CC6 /* MoonlightBridge */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F71DE24630024E9000576CC6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F7A0000230024E9000576CC6 /* MoonlightBridge in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = Starlight;
 			packageProductDependencies = (
+				F7A0000330024E9000576CC6 /* MoonlightBridge */,
 			);
 			productName = Starlight;
 			productReference = F71DE23630024E9000576CC6 /* Starlight.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = F71DE22D30024E9000576CC6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F7A0000130024E9000576CC6 /* XCLocalSwiftPackageReference "Packages/MoonlightCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F71DE23730024E9000576CC6 /* Products */;
 			projectDirPath = "";
@@ -408,6 +417,7 @@
 				DEVELOPMENT_TEAM = 92DWFLY372;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -455,6 +465,7 @@
 				DEVELOPMENT_TEAM = 92DWFLY372;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -634,6 +645,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		F7A0000130024E9000576CC6 /* XCLocalSwiftPackageReference "Packages/MoonlightCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MoonlightCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F7A0000330024E9000576CC6 /* MoonlightBridge */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MoonlightBridge;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F71DE22E30024E9000576CC6 /* Project object */;
 }

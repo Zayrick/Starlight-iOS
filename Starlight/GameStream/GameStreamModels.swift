@@ -108,6 +108,9 @@ nonisolated struct ServerInfo: Sendable {
     var uuid: String
     var macAddress: String?
     var appVersion: String?
+    var gfeVersion: String?
+    /// Bitmask of the `SCM_*` codecs the host can encode.
+    var serverCodecModeSupport: Int
     var gpuType: String?
     var localIP: String?
     var externalIP: String?
@@ -126,6 +129,8 @@ nonisolated struct ServerInfo: Sendable {
         let mac = xml.text("mac")
         macAddress = mac == "00:00:00:00:00:00" ? nil : mac
         appVersion = xml.text("appversion")
+        gfeVersion = xml.text("GfeVersion")
+        serverCodecModeSupport = xml.text("ServerCodecModeSupport").flatMap { Int($0) } ?? 0
         gpuType = xml.text("gputype")
         localIP = xml.text("LocalIP")
         externalIP = xml.text("ExternalIP")
@@ -145,4 +150,27 @@ nonisolated struct ServerInfo: Sendable {
     var serverMajorVersion: Int {
         appVersion?.split(separator: ".").first.flatMap { Int($0) } ?? 7
     }
+
+    /// Sunshine reports a negative build number in `appversion`, e.g. `7.1.431.-1`.
+    var isSunshine: Bool {
+        appVersion?.contains(".-") == true
+    }
+}
+
+/// Parameters of a `/launch` or `/resume` request.
+nonisolated struct LaunchRequest: Sendable {
+    var appID: String
+    var width: Int
+    var height: Int
+    var fps: Int
+    /// AES key and key ID protecting the input and audio streams.
+    var remoteInputKey: Data
+    var remoteInputKeyID: UInt32
+    var hdr: Bool
+    var surroundAudioInfo: Int
+    /// Lets the host adjust game settings to match the stream.
+    var optimizeGameSettings = true
+    var playAudioOnHost = false
+    /// Extra `&key=value` pairs required by moonlight-common-c.
+    var extraQuery: String = ""
 }

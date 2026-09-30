@@ -267,6 +267,15 @@ final class HostStore {
         appListStates[hostID] = .failed(lastError.localizedDescription)
     }
 
+    /// Quits the app running on a host.
+    func quitApp(hostID: String) async throws {
+        guard let host = host(id: hostID), let address = host.displayAddress else {
+            throw GameStreamError.unreachable("没有可用的主机地址")
+        }
+        try await host.client(at: address).quitApp()
+        update(hostID) { $0.currentGameID = nil }
+    }
+
     // MARK: - Artwork
 
     private struct ArtworkKey: Hashable {

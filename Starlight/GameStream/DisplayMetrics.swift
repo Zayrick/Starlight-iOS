@@ -53,6 +53,19 @@ enum DisplayMetrics {
 #endif
     }
 
+    /// Whether the display can show HDR content.
+    static var supportsHDR: Bool {
+#if os(iOS)
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let screen = (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.screen
+        return (screen?.potentialEDRHeadroom ?? 1) > 1
+#elseif os(macOS)
+        return (NSScreen.main?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1) > 1
+#else
+        return true
+#endif
+    }
+
     /// Converts points to pixels, rounding down to even numbers since video
     /// encoders require even dimensions.
     private static func makeSize(width: CGFloat, height: CGFloat, scale: CGFloat) -> PixelSize {

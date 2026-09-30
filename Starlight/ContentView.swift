@@ -9,7 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(HostStore.self) private var hostStore
+    @Environment(StreamController.self) private var streamController
     @Environment(\.scenePhase) private var scenePhase
+#if os(macOS) || os(visionOS)
+    @Environment(\.openWindow) private var openWindow
+#endif
     @State private var searchText = ""
 
     var body: some View {
@@ -22,7 +26,32 @@ struct ContentView: View {
                     hostStore.stop()
                 }
             }
+#if os(iOS)
+            .landscapeCover(item: activeSession) { session in
+                // Hosted by UIKit, so the environment doesn't carry over
+                StreamView(session: session)
+                    .environment(streamController)
+            }
+#else
+            .onChange(of: streamController.session?.id) { _, id in
+                if id != nil {
+                    openWindow(id: StreamWindow.id)
+                }
+            }
+#endif
     }
+
+#if os(iOS)
+    private var activeSession: Binding<StreamSession?> {
+        Binding {
+            streamController.session
+        } set: { session in
+            if session == nil {
+                streamController.close()
+            }
+        }
+    }
+#endif
 
     @ViewBuilder
     private var platformContent: some View {
@@ -114,4 +143,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environment(HostStore())
+        .environment(StreamController())
 }
