@@ -7,7 +7,7 @@ import AVFoundation
 import SwiftUI
 
 struct StreamView: View {
-    let session: StreamSession
+    @Bindable var session: StreamSession
 
     @Environment(StreamController.self) private var streamController
 
@@ -15,8 +15,14 @@ struct StreamView: View {
         ZStack {
             Color.black
 
-            VideoLayerView(layer: session.videoRenderer.displayLayer)
-                .opacity(session.phase == .streaming ? 1 : 0)
+            StreamSurface(
+                layer: session.videoRenderer.displayLayer,
+                input: session.input,
+                isActive: session.phase == .streaming,
+                touchEnabled: session.touchEnabled,
+                mouseMode: session.mouseMode
+            )
+            .opacity(session.phase == .streaming ? 1 : 0)
 
             statusOverlay
         }
@@ -45,6 +51,8 @@ struct StreamView: View {
 #if os(iOS)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        // Touches near the edges belong to the host first
+        .defersSystemGestures(on: .all)
 #endif
         .keepsDisplayAwake()
         .onChange(of: session.phase) { _, phase in
@@ -95,6 +103,21 @@ struct StreamView: View {
 
     private var controlsMenu: some View {
         Menu {
+#if !os(visionOS)
+            Section {
+#if os(iOS)
+                Toggle("触控", systemImage: "hand.point.up.left", isOn: $session.touchEnabled)
+#endif
+
+                Picker("鼠标模式", systemImage: "cursorarrow", selection: $session.mouseMode) {
+                    ForEach(MouseMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+#endif
+
             Button("断开连接", systemImage: "xmark") {
                 streamController.close()
             }
@@ -163,75 +186,3 @@ private struct KeepsDisplayAwake: ViewModifier {
             }
     }
 }
-
-// MARK: - Video layer
-
-#if os(macOS)
-private struct VideoLayerView: NSViewRepresentable {
-    let layer: AVSampleBufferDisplayLayer
-
-    func makeNSView(context: Context) -> LayerHostView {
-        LayerHostView(hostedLayer: layer)
-    }
-
-    func updateNSView(_ view: LayerHostView, context: Context) {}
-
-    final class LayerHostView: NSView {
-        private let hostedLayer: CALayer
-
-        init(hostedLayer: CALayer) {
-            self.hostedLayer = hostedLayer
-            super.init(frame: .zero)
-            wantsLayer = true
-            layer?.addSublayer(hostedLayer)
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func layout() {
-            super.layout()
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            hostedLayer.frame = bounds
-            CATransaction.commit()
-        }
-    }
-}
-#else
-private struct VideoLayerView: UIViewRepresentable {
-    let layer: AVSampleBufferDisplayLayer
-
-    func makeUIView(context: Context) -> LayerHostView {
-        LayerHostView(hostedLayer: layer)
-    }
-
-    func updateUIView(_ view: LayerHostView, context: Context) {}
-
-    final class LayerHostView: UIView {
-        private let hostedLayer: CALayer
-
-        init(hostedLayer: CALayer) {
-            self.hostedLayer = hostedLayer
-            super.init(frame: .zero)
-            backgroundColor = .black
-            layer.addSublayer(hostedLayer)
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            hostedLayer.frame = bounds
-            CATransaction.commit()
-        }
-    }
-}
-#endif

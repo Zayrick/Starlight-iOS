@@ -76,7 +76,25 @@ private struct LandscapeCoverContent<Item: Identifiable, Content: View>: View {
     }
 }
 
-private final class LandscapeHostingController<Content: View>: UIHostingController<Content> {
+/// A controller that locks the pointer when the content it shows asks to.
+protocol PointerLockController: AnyObject {
+    var prefersPointerLock: Bool { get set }
+}
+
+private final class LandscapeHostingController<Content: View>: UIHostingController<Content>, PointerLockController {
+    // The system only asks the topmost full-screen controller
+    var prefersPointerLock = false {
+        didSet {
+            if prefersPointerLock != oldValue {
+                setNeedsUpdateOfPrefersPointerLocked()
+            }
+        }
+    }
+
+    override var prefersPointerLocked: Bool {
+        prefersPointerLock
+    }
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         .landscape
     }

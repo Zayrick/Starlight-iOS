@@ -6,6 +6,7 @@
 //  the moonlight-common-c connection and reports its progress.
 //
 
+import CoreGraphics
 import Foundation
 import Observation
 
@@ -30,9 +31,19 @@ final class StreamSession: Identifiable {
     let host: StreamHost
     let app: StreamApp
     let videoRenderer: VideoRenderer
+    @ObservationIgnored let input = StreamInput()
 
-    private(set) var phase: Phase = .starting("正在连接主机…")
+    private(set) var phase: Phase = .starting("正在连接主机…") {
+        didSet {
+            // Also releases whatever is held down once the stream is over
+            input.isEnabled = phase == .streaming
+        }
+    }
     private(set) var isConnectionPoor = false
+
+    /// Start out from the settings and can be changed while streaming.
+    var touchEnabled: Bool
+    var mouseMode: MouseMode
 
     /// Quit whatever else is running on the host before launching.
     @ObservationIgnored private let quitsRunningApp: Bool
@@ -46,6 +57,9 @@ final class StreamSession: Identifiable {
         self.app = app
         self.quitsRunningApp = quitsRunningApp
         videoRenderer = VideoRenderer()
+        let inputSettings = InputSettings.load()
+        touchEnabled = inputSettings.touchEnabled
+        mouseMode = inputSettings.mouseMode
     }
 
     // MARK: - Lifecycle
@@ -119,6 +133,7 @@ final class StreamSession: Identifiable {
             try Task.checkCancellation()
 
             let settings = ResolvedStreamSettings.load()
+            input.videoSize = CGSize(width: settings.size.width, height: settings.size.height)
             var formats = settings.codec.videoFormats(
                 hdr: settings.hdr && DisplayMetrics.supportsHDR,
                 yuv444: settings.yuv444

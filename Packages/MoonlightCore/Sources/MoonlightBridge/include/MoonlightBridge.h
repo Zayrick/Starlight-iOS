@@ -173,6 +173,62 @@ bool SLStreamGetHDRMetadata(SLHDRMetadata* metadata);
 /// silence when not enough is buffered. Real-time safe.
 void SLStreamRenderAudio(float* const* channels, int32_t channelCount, int32_t frameCount);
 
+#pragma mark - Input
+
+// Input is dropped unless a session is established. These functions only
+// queue the event and can be called from any thread.
+
+/// Touch event types, matching moonlight-common-c's LI_TOUCH_EVENT_* values.
+typedef CF_ENUM(uint8_t, SLTouchEventType) {
+    SLTouchEventTypeDown = 0x01,
+    SLTouchEventTypeUp = 0x02,
+    SLTouchEventTypeMove = 0x03,
+    SLTouchEventTypeCancel = 0x04,
+    SLTouchEventTypeCancelAll = 0x07,
+};
+
+/// Mouse buttons, matching moonlight-common-c's BUTTON_* values.
+typedef CF_ENUM(int32_t, SLMouseButton) {
+    SLMouseButtonLeft = 0x01,
+    SLMouseButtonMiddle = 0x02,
+    SLMouseButtonRight = 0x03,
+    SLMouseButtonX1 = 0x04,
+    SLMouseButtonX2 = 0x05,
+};
+
+/// Keyboard modifiers, matching moonlight-common-c's MODIFIER_* values.
+typedef CF_OPTIONS(uint8_t, SLKeyModifiers) {
+    SLKeyModifierShift = 0x01,
+    SLKeyModifierControl = 0x02,
+    SLKeyModifierAlt = 0x04,
+    SLKeyModifierMeta = 0x08,
+    /// The key has an 0xE0 scancode prefix, like the right Control key.
+    SLKeyModifierExtended = 0x10,
+};
+
+/// Only Sunshine hosts accept touches. `x` and `y` are normalized to the video area, (0, 0) being the top left.
+/// `pressure` is 0...1, or 0 when unknown. Contact area axes are normalized
+/// like the coordinates, or 0 when unknown.
+void SLInputSendTouch(SLTouchEventType type, uint32_t pointerID, float x, float y,
+                      float pressure, float contactAreaMajor, float contactAreaMinor);
+
+/// Relative motion, positive `deltaY` moving down.
+void SLInputSendMouseMove(int16_t deltaX, int16_t deltaY);
+
+/// Absolute position within a `referenceWidth` by `referenceHeight` plane
+/// covering the video.
+void SLInputSendMousePosition(int16_t x, int16_t y, int16_t referenceWidth, int16_t referenceHeight);
+
+void SLInputSendMouseButton(SLMouseButton button, bool pressed);
+
+/// 120 is one wheel notch. Positive values scroll up and right.
+void SLInputSendScroll(int16_t vertical, int16_t horizontal);
+
+/// `keyCode` is a Windows virtual key code on a US layout. Keys missing from
+/// that layout, like the JIS Yen key, are sent `nonNormalized` so that the
+/// host doesn't translate them.
+void SLInputSendKey(int16_t keyCode, bool pressed, SLKeyModifiers modifiers, bool nonNormalized);
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,6 +16,8 @@ struct SettingsView: View {
     @AppStorage(StreamSettings.Key.yuv444) private var yuv444Enabled = false
     @AppStorage(StreamSettings.Key.colorRange) private var colorRange = StreamColorRange.limited
     @AppStorage(StreamSettings.Key.audio) private var audio = StreamAudioConfiguration.stereo
+    @AppStorage(StreamSettings.Key.touchInput) private var touchEnabled = InputSettings.defaultTouchEnabled
+    @AppStorage(StreamSettings.Key.mouseMode) private var mouseMode = InputSettings.defaultMouseMode
 
     var body: some View {
         Form {
@@ -73,6 +75,24 @@ struct SettingsView: View {
                     }
                 }
             }
+
+#if !os(visionOS)
+            Section {
+#if os(iOS)
+                Toggle("触控", isOn: $touchEnabled)
+#endif
+
+                Picker("鼠标模式", selection: $mouseMode) {
+                    ForEach(MouseMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+            } header: {
+                Text("输入")
+            } footer: {
+                Text(inputFooter)
+            }
+#endif
         }
         .formStyle(.grouped)
         .onChange(of: resolution) { bitrateKbps = recommendedBitrateKbps }
@@ -115,6 +135,25 @@ struct SettingsView: View {
         notes.append(codec.supportsYUV444
             ? "YUV 4:4:4 使用 HEVC 编码，文字更清晰但需要更高码率，主机不支持时会回退到 4:2:0。"
             : "YUV 4:4:4 仅支持 HEVC 编码。")
+        return notes.joined(separator: "\n")
+    }
+
+    private var inputFooter: String {
+        var notes: [String] = []
+#if os(iOS)
+        notes.append("触控会以多点触控的形式发送到主机，需要 Sunshine 主机。")
+#endif
+        switch mouseMode {
+        case .remoteCursor:
+#if os(macOS)
+            notes.append("远程光标会捕获鼠标，适合用鼠标转动视角的游戏。按 ⌃⌥⇧Z 释放或重新捕获鼠标。")
+#else
+            notes.append("远程光标会锁定指针，适合用鼠标转动视角的游戏。")
+#endif
+        case .localCursor:
+            notes.append("本地光标保持指针可见并直接定位，适合远程桌面，但部分游戏不支持。")
+        }
+        notes.append("键盘上的 Command 键保留给本机快捷键，不会发送到主机。")
         return notes.joined(separator: "\n")
     }
 

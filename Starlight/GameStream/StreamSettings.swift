@@ -17,6 +17,8 @@ nonisolated enum StreamSettings {
         static let yuv444 = "stream.yuv444"
         static let colorRange = "stream.colorRange"
         static let audio = "stream.audio"
+        static let touchInput = "input.touch"
+        static let mouseMode = "input.mouseMode"
     }
 
     static let frameRates = [30, 60, 90, 120]
@@ -49,6 +51,42 @@ nonisolated enum StreamSettings {
         let frameRateFactor = (fps <= 60 ? fps : (fps / 60).squareRoot() * 60) / 30
         let kbps = Int((resolutionFactor * frameRateFactor).rounded()) * 1000
         return min(max(kbps, bitrateRangeKbps.lowerBound), bitrateRangeKbps.upperBound)
+    }
+}
+
+/// How the mouse controls the host.
+nonisolated enum MouseMode: String, CaseIterable, Identifiable {
+    /// The pointer is captured and moves the host cursor relatively, which
+    /// games that turn the camera with the mouse need.
+    case remoteCursor
+    /// The local pointer stays visible and places the host cursor at the
+    /// same spot, like a remote desktop.
+    case localCursor
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .remoteCursor: "远程光标"
+        case .localCursor: "本地光标"
+        }
+    }
+}
+
+/// Input preferences, which can also be changed while streaming.
+nonisolated struct InputSettings: Sendable {
+    var touchEnabled: Bool
+    var mouseMode: MouseMode
+
+    static let defaultTouchEnabled = true
+    static let defaultMouseMode = MouseMode.remoteCursor
+
+    static func load(from defaults: UserDefaults = .standard) -> InputSettings {
+        typealias Key = StreamSettings.Key
+        return InputSettings(
+            touchEnabled: defaults.object(forKey: Key.touchInput) as? Bool ?? defaultTouchEnabled,
+            mouseMode: defaults.string(forKey: Key.mouseMode).flatMap(MouseMode.init(rawValue:)) ?? defaultMouseMode
+        )
     }
 }
 

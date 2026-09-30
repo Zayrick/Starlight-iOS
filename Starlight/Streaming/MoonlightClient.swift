@@ -2,8 +2,9 @@
 //  MoonlightClient.swift
 //  Starlight
 //
-//  The only Swift code talking to the moonlight-common-c bridge. It turns the
-//  C callbacks into events and forwards media to the renderers.
+//  The Swift side of the moonlight-common-c bridge's session. It turns the C
+//  callbacks into events and forwards media to the renderers. Input is sent by
+//  StreamInput.
 //
 
 import AVFoundation
