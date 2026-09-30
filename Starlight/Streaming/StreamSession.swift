@@ -119,7 +119,10 @@ final class StreamSession: Identifiable {
             try Task.checkCancellation()
 
             let settings = ResolvedStreamSettings.load()
-            var formats = settings.codec.videoFormats(hdr: settings.hdr && DisplayMetrics.supportsHDR)
+            var formats = settings.codec.videoFormats(
+                hdr: settings.hdr && DisplayMetrics.supportsHDR,
+                yuv444: settings.yuv444
+            )
             // Only ask for HDR when the host can encode 10-bit video
             let hostSupports10Bit = info.serverCodecModeSupport & (0x200 | 0x20000 | 0x100000 | 0x400000) != 0
             if !hostSupports10Bit {

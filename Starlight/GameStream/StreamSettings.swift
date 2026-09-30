@@ -14,6 +14,7 @@ nonisolated enum StreamSettings {
         static let bitrateKbps = "stream.bitrateKbps"
         static let codec = "stream.codec"
         static let hdr = "stream.hdr"
+        static let yuv444 = "stream.yuv444"
         static let colorRange = "stream.colorRange"
         static let audio = "stream.audio"
     }
@@ -58,6 +59,7 @@ nonisolated struct ResolvedStreamSettings: Sendable {
     var bitrateKbps: Int
     var codec: VideoCodecPreference
     var hdr: Bool
+    var yuv444: Bool
     var colorRange: StreamColorRange
     var audio: StreamAudioConfiguration
 
@@ -74,6 +76,7 @@ nonisolated struct ResolvedStreamSettings: Sendable {
             bitrateKbps: min(max(bitrate, StreamSettings.bitrateRangeKbps.lowerBound), StreamSettings.bitrateRangeKbps.upperBound),
             codec: defaults.string(forKey: Key.codec).flatMap(VideoCodecPreference.init(rawValue:)) ?? .auto,
             hdr: defaults.bool(forKey: Key.hdr),
+            yuv444: defaults.bool(forKey: Key.yuv444),
             colorRange: defaults.string(forKey: Key.colorRange).flatMap(StreamColorRange.init(rawValue:)) ?? .limited,
             audio: defaults.string(forKey: Key.audio).flatMap(StreamAudioConfiguration.init(rawValue:)) ?? .stereo
         )
@@ -160,6 +163,9 @@ nonisolated enum VideoCodecPreference: String, CaseIterable, Identifiable {
 
     var supportsHDR: Bool { self != .h264 }
 
+    /// VideoToolbox only decodes 4:4:4 in HEVC (RExt), not H.264 or AV1.
+    var supportsYUV444: Bool { self == .auto || self == .hevc }
+
     var isHardwareDecodeSupported: Bool {
         switch self {
         case .auto, .h264: true
@@ -170,7 +176,8 @@ nonisolated enum VideoCodecPreference: String, CaseIterable, Identifiable {
 
     /// The formats to offer the host. The host picks AV1 over HEVC over H.264,
     /// so this decides the codec while keeping fallbacks the device can decode.
-    func videoFormats(hdr: Bool) -> VideoFormats {
+    /// 4:4:4 is only used if the host can encode it, otherwise it falls back to 4:2:0.
+    func videoFormats(hdr: Bool, yuv444: Bool) -> VideoFormats {
         var formats: VideoFormats = .h264
         guard self != .h264 else { return formats }
 
@@ -178,6 +185,12 @@ nonisolated enum VideoCodecPreference: String, CaseIterable, Identifiable {
             formats.insert(.hevc)
             if hdr {
                 formats.insert(.hevcMain10)
+            }
+            if yuv444, supportsYUV444 {
+                formats.insert(.hevcRExt8_444)
+                if hdr {
+                    formats.insert(.hevcRExt10_444)
+                }
             }
         }
         if self == .av1, VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1) {

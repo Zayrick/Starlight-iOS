@@ -35,6 +35,8 @@ nonisolated struct VideoFormats: OptionSet, Sendable {
     static let h264 = VideoFormats(rawValue: SLVideoFormat.H264.rawValue)
     static let hevc = VideoFormats(rawValue: SLVideoFormat.H265.rawValue)
     static let hevcMain10 = VideoFormats(rawValue: SLVideoFormat.h265Main10.rawValue)
+    static let hevcRExt8_444 = VideoFormats(rawValue: SLVideoFormat.h265RExt8_444.rawValue)
+    static let hevcRExt10_444 = VideoFormats(rawValue: SLVideoFormat.h265RExt10_444.rawValue)
     static let av1Main8 = VideoFormats(rawValue: SLVideoFormat.av1Main8.rawValue)
     static let av1Main10 = VideoFormats(rawValue: SLVideoFormat.av1Main10.rawValue)
 

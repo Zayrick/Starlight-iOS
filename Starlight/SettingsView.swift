@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(StreamSettings.Key.bitrateKbps) private var bitrateKbps = StreamSettings.defaultBitrateKbps
     @AppStorage(StreamSettings.Key.codec) private var codec = VideoCodecPreference.auto
     @AppStorage(StreamSettings.Key.hdr) private var hdrEnabled = false
+    @AppStorage(StreamSettings.Key.yuv444) private var yuv444Enabled = false
     @AppStorage(StreamSettings.Key.colorRange) private var colorRange = StreamColorRange.limited
     @AppStorage(StreamSettings.Key.audio) private var audio = StreamAudioConfiguration.stereo
 
@@ -51,6 +52,9 @@ struct SettingsView: View {
                 Toggle("HDR", isOn: $hdrEnabled)
                     .disabled(!codec.supportsHDR)
 
+                Toggle("YUV 4:4:4", isOn: $yuv444Enabled)
+                    .disabled(!codec.supportsYUV444)
+
                 Picker("色彩范围", selection: $colorRange) {
                     ForEach(StreamColorRange.allCases) { range in
                         Text(range.title).tag(range)
@@ -76,6 +80,9 @@ struct SettingsView: View {
         .onChange(of: codec) {
             if !codec.supportsHDR {
                 hdrEnabled = false
+            }
+            if !codec.supportsYUV444 {
+                yuv444Enabled = false
             }
         }
         .navigationTitle("设置")
@@ -105,6 +112,9 @@ struct SettingsView: View {
             notes.append("此设备不支持 \(codec.title) 硬件解码，串流时将回退到其他编码。")
         }
         notes.append(codec.supportsHDR ? "HDR 需要主机和显示器同时支持。" : "H.264 不支持 HDR。")
+        notes.append(codec.supportsYUV444
+            ? "YUV 4:4:4 使用 HEVC 编码，文字更清晰但需要更高码率，主机不支持时会回退到 4:2:0。"
+            : "YUV 4:4:4 仅支持 HEVC 编码。")
         return notes.joined(separator: "\n")
     }
 
