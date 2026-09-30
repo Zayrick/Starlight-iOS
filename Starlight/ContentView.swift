@@ -47,9 +47,9 @@ struct ContentView: View {
                 .listRowSeparator(.hidden)
 
                 NavigationLink {
-                    AppsView()
+                    SettingsView()
                 } label: {
-                    Label("应用", systemImage: "square.grid.2x2")
+                    Label("设置", systemImage: "gearshape")
                 }
                 .listRowSeparator(.hidden)
             }
@@ -71,13 +71,13 @@ struct ContentView: View {
         TabView {
             Tab("设备", systemImage: "desktopcomputer") {
                 NavigationStack {
-                    DevicesView(searchText: searchText)
+                    DevicesView(searchText: "")
                 }
             }
 
-            Tab("应用", systemImage: "square.grid.2x2") {
+            Tab("设置", systemImage: "gearshape") {
                 NavigationStack {
-                    AppsView()
+                    SettingsView()
                 }
             }
 
@@ -85,9 +85,10 @@ struct ContentView: View {
                 NavigationStack {
                     DevicesView(searchText: searchText)
                 }
+                // Scoped to the search tab so the devices tab doesn't get its own field
+                .searchable(text: $searchText, prompt: "搜索设备")
             }
         }
-        .searchable(text: $searchText, prompt: "搜索设备")
         .tabViewSearchActivation(.searchTabSelection)
     }
 #else
@@ -100,9 +101,9 @@ struct ContentView: View {
                 }
             }
 
-            Tab("应用", systemImage: "square.grid.2x2") {
+            Tab("设置", systemImage: "gearshape") {
                 NavigationStack {
-                    AppsView()
+                    SettingsView()
                 }
             }
         }
