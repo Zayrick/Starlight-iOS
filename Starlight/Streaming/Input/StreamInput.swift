@@ -51,6 +51,17 @@ final class StreamInput {
         send(key, pressed: pressed)
     }
 
+    /// Presses the keys in order and lets go of them in reverse, like a
+    /// shortcut typed on a keyboard.
+    func typeShortcut(_ keys: [VirtualKey]) {
+        for key in keys {
+            setKey(key, pressed: true)
+        }
+        for key in keys.reversed() {
+            setKey(key, pressed: false)
+        }
+    }
+
     private func send(_ key: VirtualKey, pressed: Bool) {
         var modifiers = modifiers
         if key.isExtended {

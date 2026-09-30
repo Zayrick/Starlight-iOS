@@ -11,6 +11,14 @@ struct StreamView: View {
 
     @Environment(StreamController.self) private var streamController
 
+#if os(iOS)
+    @State private var isDrawerOpen = false
+    /// How much of the drawer a finger has pulled out, while one does.
+    @State private var drawerPull: CGFloat?
+    /// From the screen's edge to the open drawer's trailing edge.
+    @State private var drawerExtent = StreamDrawer.width
+#endif
+
     var body: some View {
         ZStack {
             Color.black
@@ -29,8 +37,17 @@ struct StreamView: View {
 #if os(iOS)
             if !session.phase.isFinished {
                 // Kept just clear of the screen's edge
-                StreamEdgeHandle(menu: controlsMenu)
-                    .padding(2)
+                StreamEdgeHandle { distance in
+                    drawerPull = min(distance, drawerExtent)
+                } onRelease: { distance, velocity in
+                    drawerPull = min(distance, drawerExtent)
+                    settleDrawer(velocity: velocity)
+                } onActivate: {
+                    withAnimation(Self.drawerAnimation) {
+                        isDrawerOpen = true
+                    }
+                }
+                .padding(2)
             }
 #endif
         }
@@ -65,6 +82,51 @@ struct StreamView: View {
                     .transition(.opacity)
             }
         }
+#if os(iOS)
+        .overlay {
+            // Taps and drags beside the open drawer close it instead of
+            // reaching the host
+            Color.black
+                .opacity(0.25 * drawerProgress)
+                .contentShape(.rect)
+                .onTapGesture {
+                    withAnimation(Self.drawerAnimation) {
+                        isDrawerOpen = false
+                    }
+                }
+                .gesture(closeDrawerGesture)
+                .allowsHitTesting(isDrawerVisible)
+                .ignoresSafeArea()
+        }
+        .overlay(alignment: .leading) {
+            if !session.phase.isFinished {
+                StreamDrawer(session: session)
+                    .padding([.leading, .vertical], 8)
+                    .simultaneousGesture(closeDrawerGesture)
+                    .offset(x: drawerReveal - drawerExtent)
+                    // Not offset, so it measures the open position
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.frame(in: .named(Self.coordinateSpace)).maxX
+                    } action: { extent in
+                        drawerExtent = extent
+                    }
+                    .opacity(isDrawerVisible ? 1 : 0)
+                    .allowsHitTesting(isDrawerVisible)
+                    .accessibilityHidden(!isDrawerOpen)
+            }
+        }
+        .coordinateSpace(.named(Self.coordinateSpace))
+        // Once the drawer is far enough out to stay open when let go
+        .sensoryFeedback(.impact(weight: .light), trigger: drawerReveal > drawerExtent / 2) { _, willOpen in
+            willOpen && drawerPull != nil
+        }
+        .onChange(of: session.phase.isFinished) { _, isFinished in
+            if isFinished {
+                isDrawerOpen = false
+                drawerPull = nil
+            }
+        }
+#endif
         .animation(.smooth, value: session.phase)
         .animation(.smooth, value: session.isConnectionPoor)
         .animation(.smooth, value: session.showsStatistics)
@@ -154,47 +216,47 @@ struct StreamView: View {
     }
 
 #if os(iOS)
-    /// Built when it opens, so it shows the current settings.
-    private var controlsMenu: UIMenu {
-        UIMenu(children: [
-            UIDeferredMenuElement.uncached { [session, streamController] completion in
-                let touch = UIAction(
-                    title: "触控", image: UIImage(systemName: "hand.point.up.left"),
-                    state: session.touchEnabled ? .on : .off
-                ) { _ in
-                    session.touchEnabled.toggle()
-                }
+    private static let coordinateSpace = "stream"
+    private static let drawerAnimation = Animation.spring(duration: 0.4, bounce: 0.15)
 
-                let mouseModes = MouseMode.allCases.map { mode in
-                    UIAction(title: mode.title, state: session.mouseMode == mode ? .on : .off) { _ in
-                        session.mouseMode = mode
-                    }
-                }
-                let mouseMode = UIMenu(
-                    title: "鼠标模式", subtitle: session.mouseMode.title,
-                    image: UIImage(systemName: "cursorarrow"), options: .singleSelection,
-                    children: mouseModes
-                )
+    /// How much of the drawer shows, from 0 when closed to drawerExtent.
+    private var drawerReveal: CGFloat {
+        drawerPull ?? (isDrawerOpen ? drawerExtent : 0)
+    }
 
-                let statistics = UIAction(
-                    title: "串流信息", image: UIImage(systemName: "chart.bar.xaxis"),
-                    state: session.showsStatistics ? .on : .off
-                ) { _ in
-                    session.showsStatistics.toggle()
-                }
+    private var drawerProgress: CGFloat {
+        drawerExtent > 0 ? drawerReveal / drawerExtent : 0
+    }
 
-                completion([
-                    UIMenu(options: .displayInline, children: [statistics]),
-                    UIMenu(options: .displayInline, children: [touch, mouseMode]),
-                    UIAction(title: "断开连接", image: UIImage(systemName: "xmark")) { _ in
-                        streamController.close()
-                    },
-                    UIAction(title: "退出应用", image: UIImage(systemName: "power"), attributes: .destructive) { _ in
-                        streamController.close(quitApp: true)
-                    },
-                ])
-            },
-        ])
+    private var isDrawerVisible: Bool {
+        isDrawerOpen || drawerPull != nil
+    }
+
+    /// Pushing the open drawer back to the left, on it or beside it.
+    private var closeDrawerGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                guard isDrawerOpen else { return }
+                // Leaves vertical drags to the drawer's scroll view
+                if drawerPull == nil, -value.translation.width <= abs(value.translation.height) {
+                    return
+                }
+                drawerPull = drawerExtent + min(value.translation.width, 0)
+            }
+            .onEnded { value in
+                settleDrawer(velocity: value.velocity.width)
+            }
+    }
+
+    /// Opens or closes the drawer from where a finger let go of it, carried
+    /// on by a flick.
+    private func settleDrawer(velocity: CGFloat) {
+        guard let drawerPull else { return }
+        let projected = drawerPull + velocity * 0.2
+        withAnimation(Self.drawerAnimation) {
+            isDrawerOpen = projected > drawerExtent / 2
+            self.drawerPull = nil
+        }
     }
 #else
     private var controlsMenu: some View {

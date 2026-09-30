@@ -3,9 +3,9 @@
 //  Starlight
 //
 //  A faint accent near the top of the left edge that follows the screen's
-//  corner. Pulling it right and letting go opens a menu with the system's
-//  own animation. Touches starting on it are kept from the host; all others
-//  pass through to the stream.
+//  corner. Pulling it right drives the stream drawer, which follows the
+//  finger. Touches starting on it are kept from the host; all others pass
+//  through to the stream.
 //
 
 #if os(iOS)
@@ -13,14 +13,22 @@ import SwiftUI
 import UIKit
 
 struct StreamEdgeHandle: UIViewRepresentable {
-    let menu: UIMenu
+    /// How far the handle is pulled right, as the finger moves.
+    let onPull: (CGFloat) -> Void
+    /// How far the handle was pulled when let go, and how fast the finger
+    /// was moving right, in points per second.
+    let onRelease: (_ distance: CGFloat, _ velocity: CGFloat) -> Void
+    /// Opens the drawer without a pull, e.g. from VoiceOver.
+    let onActivate: () -> Void
 
     func makeUIView(context: Context) -> StreamEdgeHandleView {
         StreamEdgeHandleView()
     }
 
     func updateUIView(_ view: StreamEdgeHandleView, context: Context) {
-        view.menu = menu
+        view.onPull = onPull
+        view.onRelease = onRelease
+        view.onActivate = onActivate
     }
 }
 
@@ -34,25 +42,15 @@ final class StreamEdgeHandleView: UIView {
     private static let hitPadding: CGFloat = 12
     private static let idleAlpha: CGFloat = 0.2
     private static let activeAlpha: CGFloat = 0.8
-    /// How far the accent follows the finger, however far it's pulled.
-    private static let maxPullOffset: CGFloat = 8
-    /// How far the finger has to pull for letting go to open the menu.
-    private static let openDistance: CGFloat = 32
 
-    var menu: UIMenu? {
-        get { menuButton.menu }
-        set { menuButton.menu = newValue }
-    }
+    var onPull: ((CGFloat) -> Void)?
+    var onRelease: ((CGFloat, CGFloat) -> Void)?
+    var onActivate: (() -> Void)?
 
-    /// Moves with the pull while this view stays put to measure the corner.
+    /// Fades on its own while this view stays put to measure the corner.
     private let accentView = UIView()
     private let accentLayer = CAShapeLayer()
-    /// Never touched directly, it presents the menu next to the accent.
-    private let menuButton = UIButton(type: .system)
-    private let feedback = UIImpactFeedbackGenerator(style: .light)
     private var hitRect = CGRect.null
-    /// Whether letting go now opens the menu.
-    private var isArmed = false
     private var fadeTask: Task<Void, Never>?
 
     init() {
@@ -71,9 +69,9 @@ final class StreamEdgeHandleView: UIView {
         accentLayer.lineCap = .round
         accentView.layer.addSublayer(accentLayer)
 
-        menuButton.showsMenuAsPrimaryAction = true
-        menuButton.accessibilityLabel = "串流选项"
-        addSubview(menuButton)
+        isAccessibilityElement = true
+        accessibilityLabel = "串流选项"
+        accessibilityTraits = .button
 
         let pull = UIPanGestureRecognizer(target: self, action: #selector(handlePull))
         pull.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
@@ -89,11 +87,19 @@ final class StreamEdgeHandleView: UIView {
         hitRect.contains(point) ? self : nil
     }
 
+    override var accessibilityFrame: CGRect {
+        get { hitRect.isNull ? .zero : UIAccessibility.convertToScreenCoordinates(hitRect, in: self) }
+        set {}
+    }
+
+    override func accessibilityActivate() -> Bool {
+        onActivate?()
+        return true
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Setting bounds and center leaves an ongoing pull's transform alone
-        accentView.bounds = bounds
-        accentView.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        accentView.frame = bounds
 
         // Reading the radius during layout also follows its changes
         let path = window == nil ? nil : accentPath(cornerRadius: effectiveRadius(corner: .topLeft))
@@ -106,10 +112,8 @@ final class StreamEdgeHandleView: UIView {
 
         if let path {
             let accentBounds = path.bounds.insetBy(dx: -Self.lineWidth / 2, dy: -Self.lineWidth / 2)
-            menuButton.frame = accentBounds
             hitRect = CGRect(x: 0, y: 0, width: Self.hitWidth, height: accentBounds.maxY + Self.hitPadding)
         } else {
-            menuButton.frame = .zero
             hitRect = .null
         }
     }
@@ -148,30 +152,17 @@ final class StreamEdgeHandleView: UIView {
     // MARK: - Pulling
 
     @objc private func handlePull(_ recognizer: UIPanGestureRecognizer) {
+        let distance = max(recognizer.translation(in: self).x, 0)
         switch recognizer.state {
         case .began, .changed:
-            if recognizer.state == .began {
-                // Pick up from wherever the last release left off
-                accentView.layer.removeAllAnimations()
-                feedback.prepare()
-            }
-            let pull = max(recognizer.translation(in: self).x, 0)
-            // Pulling back far enough before letting go keeps the menu closed
-            let isArmed = pull >= Self.openDistance
-            if isArmed, !self.isArmed {
-                feedback.impactOccurred()
-            }
-            self.isArmed = isArmed
             highlight()
-            // Rubber-band toward maxPullOffset
-            let offset = Self.maxPullOffset * (1 - exp(-pull / Self.maxPullOffset))
-            accentView.transform = CGAffineTransform(translationX: offset, y: 0)
+            onPull?(distance)
         case .ended:
-            if isArmed {
-                menuButton.performPrimaryAction()
-            }
+            onRelease?(distance, recognizer.velocity(in: self).x)
             release()
         default:
+            // A cancelled pull puts the drawer back
+            onRelease?(0, 0)
             release()
         }
     }
@@ -186,10 +177,6 @@ final class StreamEdgeHandleView: UIView {
     }
 
     private func release() {
-        isArmed = false
-        UIView.animate(springDuration: 0.45, bounce: 0.35, options: [.beginFromCurrentState, .allowUserInteraction]) {
-            self.accentView.transform = .identity
-        }
         guard accentView.alpha != Self.idleAlpha else { return }
         // Stays lit for a moment so it's easy to find again
         fadeTask?.cancel()
