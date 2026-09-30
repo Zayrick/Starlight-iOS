@@ -20,17 +20,29 @@ nonisolated struct StreamStatistics: Equatable, Sendable {
     var hostLatencyMs: Double?
     var roundTripTimeMs: Int?
 
+    /// Loss above this is worth calling out.
+    private static let highLossRate = 0.05
+
+    struct Line {
+        var text: String
+        /// Whether the value is bad enough to stand out.
+        var isWarning = false
+    }
+
     /// Lines fit for an overlay. Unknown values show as dashes so that the
     /// lines don't jump around.
-    var lines: [String] {
+    var lines: [Line] {
         [
-            "\(width)×\(height)",
-            "\(frameRate.formatted(.number.precision(.fractionLength(0)))) FPS",
-            "\((bitsPerSecond / 1_000_000).formatted(.number.precision(.fractionLength(1)))) Mbps",
-            "\(roundTripTimeMs.map(String.init) ?? "--") ms",
-            "\(hostLatencyMs.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "--") ms frm.",
-            "\(lossRate.formatted(.percent.precision(.fractionLength(1)))) loss",
-            codecName,
+            Line(text: "\(width)×\(height)"),
+            Line(text: "\(frameRate.formatted(.number.precision(.fractionLength(0)))) FPS"),
+            Line(text: "\((bitsPerSecond / 1_000_000).formatted(.number.precision(.fractionLength(1)))) Mbps"),
+            Line(text: "\(roundTripTimeMs.map(String.init) ?? "--") ms"),
+            Line(text: "\(hostLatencyMs.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "--") ms frm."),
+            Line(
+                text: "\(lossRate.formatted(.percent.precision(.fractionLength(1)))) loss",
+                isWarning: lossRate > Self.highLossRate
+            ),
+            Line(text: codecName),
         ]
     }
 

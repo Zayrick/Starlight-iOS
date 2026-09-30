@@ -157,7 +157,8 @@ struct StreamView: View {
                         .formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2))))
                 }
                 ForEach(Array(statistics.lines.enumerated()), id: \.offset) { _, line in
-                    Text(line)
+                    Text(line.text)
+                        .foregroundStyle(line.isWarning ? Color.orange : .white.opacity(0.7))
                 }
             }
             // 70% of the caption2 size
