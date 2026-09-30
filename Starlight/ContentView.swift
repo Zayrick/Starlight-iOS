@@ -8,9 +8,24 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(HostStore.self) private var hostStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var searchText = ""
 
     var body: some View {
+        platformContent
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                // Only scan and poll hosts while the app is in the foreground
+                if phase == .active {
+                    hostStore.start()
+                } else if phase == .background {
+                    hostStore.stop()
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var platformContent: some View {
 #if os(macOS)
         macContent
 #elseif os(iOS)
@@ -46,8 +61,10 @@ struct ContentView: View {
     }
 
     private var searchableDevices: some View {
-        DevicesView(searchText: searchText)
-            .searchable(text: $searchText, prompt: "搜索")
+        NavigationStack {
+            DevicesView(searchText: searchText)
+        }
+        .searchable(text: $searchText, prompt: "搜索")
     }
 #elseif os(iOS)
     private var mobileContent: some View {
@@ -95,4 +112,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(HostStore())
 }

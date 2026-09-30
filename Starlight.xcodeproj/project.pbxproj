@@ -29,9 +29,22 @@
 		F71DE24F30024E9000576CC6 /* StarlightUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StarlightUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F71DE26A30024E9000576CC6 /* Exceptions for "Starlight" folder in "Starlight" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F71DE23530024E9000576CC6 /* Starlight */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F71DE23830024E9000576CC6 /* Starlight */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F71DE26A30024E9000576CC6 /* Exceptions for "Starlight" folder in "Starlight" target */,
+			);
 			path = Starlight;
 			sourceTree = "<group>";
 		};
@@ -395,9 +408,12 @@
 				DEVELOPMENT_TEAM = 92DWFLY372;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Starlight/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight 需要访问本地网络以发现并连接你的串流主机。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -439,9 +455,12 @@
 				DEVELOPMENT_TEAM = 92DWFLY372;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Starlight/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight 需要访问本地网络以发现并连接你的串流主机。";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

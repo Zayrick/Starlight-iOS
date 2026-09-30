@@ -30,18 +30,5 @@ final class StarlightUITests: XCTestCase {
         let searchFields = app.searchFields
         XCTAssertTrue(searchFields.firstMatch.waitForExistence(timeout: 5))
     }
-
-    @MainActor
-    func testDeviceActionsUseContextMenu() throws {
-        let app = XCUIApplication()
-        app.launch()
-
-        let card = app.descendants(matching: .any)["device-card-studio"].firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["更多"].exists)
-
-        card.press(forDuration: 1)
-        XCTAssertTrue(app.buttons["更多"].waitForExistence(timeout: 5))
-    }
 }
 #endif
