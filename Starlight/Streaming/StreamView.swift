@@ -46,11 +46,10 @@ struct StreamView: View {
         .overlay(alignment: .topLeading) {
             statisticsList
 #if os(iOS)
-                // Clear of the edge handle's accent as it's pulled
-                .padding(.top, 4)
-                .padding(.leading, 16)
+                // Right against the safe area, the edge handle is outside of it
+                .padding(.leading, 4)
 #else
-                .padding(16)
+                .padding(8)
 #endif
         }
         // Clear of the edge handle and the menu button
@@ -99,9 +98,14 @@ struct StreamView: View {
                     Text(line)
                 }
             }
-            .font(.caption2.monospacedDigit())
-            // 40% transparent
-            .foregroundStyle(.white.opacity(0.6))
+            // 70% of the caption2 size
+#if os(macOS)
+            .font(.system(size: 7, weight: .semibold).monospacedDigit())
+#else
+            .font(.system(size: 8, weight: .semibold).monospacedDigit())
+#endif
+            // 30% transparent
+            .foregroundStyle(.white.opacity(0.7))
             .lineLimit(1)
             // Readable over bright pictures too
             .shadow(color: .black.opacity(0.8), radius: 2)
