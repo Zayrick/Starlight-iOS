@@ -106,29 +106,27 @@ private struct DeviceCard: View {
 
     private var cardContent: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    device.color,
-                    device.color.mix(with: .black, by: 0.36)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .opacity(0.78)
-            .saturation(device.isOnline ? 1 : 0)
+            if device.isOnline {
+                LinearGradient(
+                    colors: [
+                        device.color,
+                        device.color.mix(with: .black, by: 0.36)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .opacity(0.78)
 
-            Circle()
-                .fill(.white.opacity(0.12))
-                .frame(width: 190, height: 190)
-                .scaleEffect(isHovered ? 1.12 : 1)
-                .offset(x: 115, y: 90)
-                .blur(radius: 2)
+                PhotoWallBackground()
 
-            Circle()
-                .fill(.white.opacity(0.08))
-                .frame(width: 110, height: 110)
-                .scaleEffect(isHovered ? 1.16 : 1)
-                .offset(x: -145, y: -95)
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.35)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+            } else {
+                Color.gray.opacity(0.55)
+            }
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 6) {
@@ -215,6 +213,60 @@ private struct DeviceCard: View {
         }
     }
 #endif
+}
+
+private struct PhotoWallBackground: View {
+    var tileWidth: CGFloat = 56
+    var spacing: CGFloat = 10
+    var angle: Angle = .degrees(-16)
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let tileHeight = tileWidth * 3 / 2
+            let stepX = tileWidth + spacing
+            let stepY = tileHeight + spacing
+            // 旋转后仍需铺满卡片，按对角线长度计算网格尺寸
+            let diagonal = (size.width * size.width + size.height * size.height)
+                .squareRoot()
+            let columnCount = Int((diagonal / stepX).rounded(.up)) + 2
+            let rowCount = Int((diagonal / stepY).rounded(.up)) + 1
+
+            VStack(spacing: spacing) {
+                ForEach(0..<rowCount, id: \.self) { row in
+                    HStack(spacing: spacing) {
+                        ForEach(0..<columnCount, id: \.self) { column in
+                            PhotoWallTile(row: row, column: column)
+                                .frame(width: tileWidth, height: tileHeight)
+                        }
+                    }
+                    // 相邻行错开半格
+                    .offset(x: row.isMultiple(of: 2) ? 0 : stepX / 2)
+                }
+            }
+            .frame(width: diagonal, height: diagonal)
+            .rotationEffect(angle)
+            .frame(width: size.width, height: size.height)
+        }
+        .clipped()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 照片墙中的单张 2:3 竖向卡片，目前为空，后续填充内容
+private struct PhotoWallTile: View {
+    let row: Int
+    let column: Int
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(.white.opacity(0.12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(.white.opacity(0.18), lineWidth: 0.5)
+            }
+    }
 }
 
 private struct Device: Identifiable {
