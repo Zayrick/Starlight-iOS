@@ -40,10 +40,20 @@ final class StreamSession: Identifiable {
         }
     }
     private(set) var isConnectionPoor = false
+    /// The latest measurements, nil until video arrives.
+    private(set) var statistics: StreamStatistics?
+    /// When the first frame showed up.
+    private(set) var connectedAt: Date?
 
     /// Start out from the settings and can be changed while streaming.
     var touchEnabled: Bool
     var mouseMode: MouseMode
+    /// Remembered for later sessions.
+    var showsStatistics: Bool {
+        didSet {
+            UserDefaults.standard.set(showsStatistics, forKey: StreamSettings.Key.showsStatistics)
+        }
+    }
 
     /// Quit whatever else is running on the host before launching.
     @ObservationIgnored private let quitsRunningApp: Bool
@@ -60,6 +70,7 @@ final class StreamSession: Identifiable {
         let inputSettings = InputSettings.load()
         touchEnabled = inputSettings.touchEnabled
         mouseMode = inputSettings.mouseMode
+        showsStatistics = UserDefaults.standard.bool(forKey: StreamSettings.Key.showsStatistics)
     }
 
     // MARK: - Lifecycle
@@ -69,6 +80,11 @@ final class StreamSession: Identifiable {
         videoRenderer.onFirstFrame = { [weak self] in
             guard let self, !phase.isFinished else { return }
             phase = .streaming
+            connectedAt = .now
+        }
+        videoRenderer.onStatistics = { [weak self] statistics in
+            guard let self, !phase.isFinished else { return }
+            self.statistics = statistics
         }
         launchTask = Task { await launch() }
     }

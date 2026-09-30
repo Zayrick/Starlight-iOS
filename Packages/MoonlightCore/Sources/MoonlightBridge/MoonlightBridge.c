@@ -233,6 +233,9 @@ static int drSubmitDecodeUnit(PDECODE_UNIT decodeUnit) {
 
     SLVideoFrame frame = {
         .isKeyFrame = decodeUnit->frameType == FRAME_TYPE_IDR,
+        .frameNumber = decodeUnit->frameNumber,
+        // Reported in 1/10 ms units
+        .hostProcessingLatencyMs = decodeUnit->frameHostProcessingLatency / 10.0f,
         .parameterSets = parameterSets,
         .parameterSetCount = parameterSetCount,
         .data = frameData,
@@ -503,6 +506,14 @@ void SLStreamDescribePorts(uint32_t portFlags, char* buffer, int32_t bufferLengt
 
 void SLStreamRequestKeyFrame(void) {
     LiRequestIdrFrame();
+}
+
+bool SLStreamGetRoundTripTime(uint32_t* roundTripTimeMs, uint32_t* varianceMs) {
+    // Only valid while connected, which the input lock guarantees like for input
+    pthread_rwlock_rdlock(&inputLock);
+    bool ok = LiGetEstimatedRttInfo(roundTripTimeMs, varianceMs);
+    pthread_rwlock_unlock(&inputLock);
+    return ok;
 }
 
 static void storeBE16(uint8_t* p, uint16_t v) {

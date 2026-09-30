@@ -45,11 +45,21 @@ nonisolated struct VideoFormats: OptionSet, Sendable {
     static let hevcMask = VideoFormats(rawValue: SL_VIDEO_FORMAT_MASK_H265)
     static let av1Mask = VideoFormats(rawValue: SL_VIDEO_FORMAT_MASK_AV1)
     static let tenBitMask = VideoFormats(rawValue: SL_VIDEO_FORMAT_MASK_10BIT)
+    static let yuv444Mask: VideoFormats = [
+        VideoFormats(rawValue: SLVideoFormat.h264High8_444.rawValue),
+        .hevcRExt8_444, .hevcRExt10_444,
+        VideoFormats(rawValue: SLVideoFormat.av1High8_444.rawValue),
+        VideoFormats(rawValue: SLVideoFormat.av1High10_444.rawValue),
+    ]
 }
 
 /// A frame handed to the video renderer. `data` is only valid during the call.
 nonisolated struct VideoFrame {
     let isKeyFrame: Bool
+    /// Gaps in the numbering are frames lost on the way.
+    let frameNumber: Int
+    /// 0 when the host doesn't report it.
+    let hostProcessingLatencyMs: Double
     /// H.264 and HEVC parameter sets without start codes, only on key frames.
     let parameterSets: [Data]
     /// Length prefixed NAL units for H.264 and HEVC, OBUs for AV1.
@@ -158,6 +168,13 @@ nonisolated final class MoonlightClient: @unchecked Sendable {
         SLStreamRequestKeyFrame()
     }
 
+    /// The estimated round trip time to the host, nil when not connected.
+    static func roundTripTimeMs() -> Int? {
+        var roundTripTime: UInt32 = 0
+        guard SLStreamGetRoundTripTime(&roundTripTime, nil) else { return nil }
+        return Int(roundTripTime)
+    }
+
     static func hdrMetadata() -> HDRMetadata? {
         var metadata = SLHDRMetadata()
         guard SLStreamGetHDRMetadata(&metadata) else { return nil }
@@ -251,6 +268,8 @@ nonisolated final class MoonlightClient: @unchecked Sendable {
             }
             let videoFrame = VideoFrame(
                 isKeyFrame: frame.isKeyFrame,
+                frameNumber: Int(frame.frameNumber),
+                hostProcessingLatencyMs: Double(frame.hostProcessingLatencyMs),
                 parameterSets: parameterSets,
                 data: UnsafeRawBufferPointer(start: frame.data, count: Int(frame.length))
             )

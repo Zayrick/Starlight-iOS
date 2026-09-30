@@ -91,6 +91,10 @@ typedef struct {
 
 typedef struct {
     bool isKeyFrame;
+    /// Increases by one per frame the host sent, so gaps are frames lost on the way.
+    int32_t frameNumber;
+    /// Time the host took to capture and encode the frame in milliseconds, or 0 when unknown.
+    float hostProcessingLatencyMs;
 
     /// H.264 and HEVC parameter sets, only present on key frames.
     const SLParameterSet* parameterSets;
@@ -154,6 +158,10 @@ int32_t SLStreamSurroundAudioInfo(int32_t channelCount);
 void SLStreamDescribePorts(uint32_t portFlags, char* buffer, int32_t bufferLength);
 
 void SLStreamRequestKeyFrame(void);
+
+/// The estimated round trip time to the host in milliseconds. Returns false
+/// when there's no connection to measure. Can be called from any thread.
+bool SLStreamGetRoundTripTime(uint32_t* roundTripTimeMs, uint32_t* varianceMs);
 
 typedef struct {
     /// Big-endian `mdcv` box contents for kCMFormatDescriptionExtension_MasteringDisplayColorVolume.

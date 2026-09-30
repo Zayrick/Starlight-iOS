@@ -19,6 +19,7 @@ nonisolated enum StreamSettings {
         static let audio = "stream.audio"
         static let touchInput = "input.touch"
         static let mouseMode = "input.mouseMode"
+        static let showsStatistics = "stream.showsStatistics"
     }
 
     static let frameRates = [30, 60, 90, 120]

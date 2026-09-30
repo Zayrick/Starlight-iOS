@@ -43,6 +43,16 @@ struct StreamView: View {
             }
         }
 #endif
+        .overlay(alignment: .topLeading) {
+            statisticsList
+#if os(iOS)
+                // Clear of the edge handle's accent as it's pulled
+                .padding(.top, 4)
+                .padding(.leading, 16)
+#else
+                .padding(16)
+#endif
+        }
         // Clear of the edge handle and the menu button
         .overlay(alignment: .top) {
             if session.phase == .streaming, session.isConnectionPoor {
@@ -58,6 +68,7 @@ struct StreamView: View {
         }
         .animation(.smooth, value: session.phase)
         .animation(.smooth, value: session.isConnectionPoor)
+        .animation(.smooth, value: session.showsStatistics)
         .environment(\.colorScheme, .dark)
 #if os(iOS)
         .statusBarHidden()
@@ -71,6 +82,32 @@ struct StreamView: View {
             if phase == .ended {
                 streamController.close()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var statisticsList: some View {
+        if session.phase == .streaming, session.showsStatistics,
+           let statistics = session.statistics, let connectedAt = session.connectedAt {
+            VStack(alignment: .leading, spacing: 2) {
+                // Ticks on its own, statistics only arrive with video
+                TimelineView(.periodic(from: connectedAt, by: 1)) { context in
+                    Text(Duration.seconds(context.date.timeIntervalSince(connectedAt))
+                        .formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2))))
+                }
+                ForEach(Array(statistics.lines.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                }
+            }
+            .font(.caption2.monospacedDigit())
+            // 40% transparent
+            .foregroundStyle(.white.opacity(0.6))
+            .lineLimit(1)
+            // Readable over bright pictures too
+            .shadow(color: .black.opacity(0.8), radius: 2)
+                // Touches and clicks go through to the stream
+                .allowsHitTesting(false)
+                .transition(.opacity)
         }
     }
 
@@ -135,7 +172,15 @@ struct StreamView: View {
                     children: mouseModes
                 )
 
+                let statistics = UIAction(
+                    title: "串流信息", image: UIImage(systemName: "chart.bar.xaxis"),
+                    state: session.showsStatistics ? .on : .off
+                ) { _ in
+                    session.showsStatistics.toggle()
+                }
+
                 completion([
+                    UIMenu(options: .displayInline, children: [statistics]),
                     UIMenu(options: .displayInline, children: [touch, mouseMode]),
                     UIAction(title: "断开连接", image: UIImage(systemName: "xmark")) { _ in
                         streamController.close()
@@ -150,6 +195,10 @@ struct StreamView: View {
 #else
     private var controlsMenu: some View {
         Menu {
+            Section {
+                Toggle("串流信息", systemImage: "chart.bar.xaxis", isOn: $session.showsStatistics)
+            }
+
 #if os(macOS)
             Section {
                 Picker("鼠标模式", systemImage: "cursorarrow", selection: $session.mouseMode) {

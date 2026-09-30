@@ -15,12 +15,15 @@ nonisolated final class VideoRenderer: MoonlightVideoRenderer, @unchecked Sendab
 
     /// Called on the main actor once the first frame has been queued for display.
     var onFirstFrame: (@MainActor @Sendable () -> Void)?
+    /// Called on the main actor about once a second while video arrives.
+    var onStatistics: (@MainActor @Sendable (StreamStatistics) -> Void)?
 
     // Only touched by the decoder thread
     private var formats: VideoFormats = []
     private var formatDescription: CMVideoFormatDescription?
     private var isWaitingForKeyFrame = true
     private var hasShownFrame = false
+    private var statistics = StreamStatisticsWindow()
 
     // Set from the control stream thread
     private let hdrMetadata = OSAllocatedUnfairLock<HDRMetadata?>(initialState: nil)
@@ -41,6 +44,7 @@ nonisolated final class VideoRenderer: MoonlightVideoRenderer, @unchecked Sendab
         self.formats = formats
         formatDescription = nil
         isWaitingForKeyFrame = true
+        statistics.reset(width: width, height: height, format: formats)
         Self.logger.info("Video \(width)x\(height)@\(fps) format 0x\(String(formats.rawValue, radix: 16))")
         return true
     }
@@ -62,6 +66,15 @@ nonisolated final class VideoRenderer: MoonlightVideoRenderer, @unchecked Sendab
     }
 
     func submit(_ frame: VideoFrame) -> Bool {
+        if let statistics = statistics.record(
+            frameNumber: frame.frameNumber,
+            byteCount: frame.data.count,
+            hostLatencyMs: frame.hostProcessingLatencyMs,
+            roundTripTimeMs: MoonlightClient.roundTripTimeMs
+        ), let onStatistics {
+            Task { @MainActor in onStatistics(statistics) }
+        }
+
         if renderer.status == .failed || renderer.requiresFlushToResumeDecoding {
             if let error = renderer.error {
                 Self.logger.error("Video renderer failed: \(error.localizedDescription)")
