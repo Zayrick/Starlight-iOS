@@ -25,15 +25,26 @@ struct StreamView: View {
             .opacity(session.phase == .streaming ? 1 : 0)
 
             statusOverlay
+
+#if os(iOS)
+            if !session.phase.isFinished {
+                // Kept just clear of the screen's edge
+                StreamEdgeHandle(menu: controlsMenu)
+                    .padding(2)
+            }
+#endif
         }
         .ignoresSafeArea()
+#if !os(iOS)
         .overlay(alignment: .topTrailing) {
             if !session.phase.isFinished {
                 controlsMenu
                     .padding(16)
             }
         }
-        .overlay(alignment: .topLeading) {
+#endif
+        // Clear of the edge handle and the menu button
+        .overlay(alignment: .top) {
             if session.phase == .streaming, session.isConnectionPoor {
                 Label("网络状况不佳", systemImage: "wifi.exclamationmark")
                     .font(.callout.weight(.medium))
@@ -101,14 +112,46 @@ struct StreamView: View {
         }
     }
 
+#if os(iOS)
+    /// Built when it opens, so it shows the current settings.
+    private var controlsMenu: UIMenu {
+        UIMenu(children: [
+            UIDeferredMenuElement.uncached { [session, streamController] completion in
+                let touch = UIAction(
+                    title: "触控", image: UIImage(systemName: "hand.point.up.left"),
+                    state: session.touchEnabled ? .on : .off
+                ) { _ in
+                    session.touchEnabled.toggle()
+                }
+
+                let mouseModes = MouseMode.allCases.map { mode in
+                    UIAction(title: mode.title, state: session.mouseMode == mode ? .on : .off) { _ in
+                        session.mouseMode = mode
+                    }
+                }
+                let mouseMode = UIMenu(
+                    title: "鼠标模式", subtitle: session.mouseMode.title,
+                    image: UIImage(systemName: "cursorarrow"), options: .singleSelection,
+                    children: mouseModes
+                )
+
+                completion([
+                    UIMenu(options: .displayInline, children: [touch, mouseMode]),
+                    UIAction(title: "断开连接", image: UIImage(systemName: "xmark")) { _ in
+                        streamController.close()
+                    },
+                    UIAction(title: "退出应用", image: UIImage(systemName: "power"), attributes: .destructive) { _ in
+                        streamController.close(quitApp: true)
+                    },
+                ])
+            },
+        ])
+    }
+#else
     private var controlsMenu: some View {
         Menu {
-#if !os(visionOS)
+#if os(macOS)
             Section {
-#if os(iOS)
-                Toggle("触控", systemImage: "hand.point.up.left", isOn: $session.touchEnabled)
-#endif
-
                 Picker("鼠标模式", systemImage: "cursorarrow", selection: $session.mouseMode) {
                     ForEach(MouseMode.allCases) { mode in
                         Text(mode.title).tag(mode)
@@ -139,6 +182,7 @@ struct StreamView: View {
         // Stay out of the way of the picture
         .opacity(session.phase == .streaming ? 0.6 : 1)
     }
+#endif
 }
 
 private extension View {
