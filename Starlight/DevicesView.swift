@@ -7,15 +7,13 @@
 
 import SwiftUI
 
-#if os(iOS)
-import UIKit
-#endif
-
 struct DevicesView: View {
-    @Binding var searchText: String
+    let searchText: String
 
     private let devices = Device.previewDevices
-    private let cardSpacing: CGFloat = 20
+    private let columns = [
+        GridItem(.adaptive(minimum: 280, maximum: 440), spacing: 20)
+    ]
 
     private var filteredDevices: [Device] {
         guard !searchText.isEmpty else {
@@ -28,54 +26,31 @@ struct DevicesView: View {
         }
     }
 
-    private var columns: [GridItem] {
-#if os(iOS)
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            return [GridItem(.flexible())]
-        }
-#endif
-
-        return [
-            GridItem(
-                .adaptive(minimum: 280, maximum: 440),
-                spacing: cardSpacing
-            )
-        ]
-    }
-
     var body: some View {
+        let visibleDevices = filteredDevices
+
         ScrollView {
-            if filteredDevices.isEmpty {
-                ContentUnavailableView.search(text: searchText)
-                    .frame(maxWidth: .infinity)
-                    .containerRelativeFrame(.vertical)
-            } else {
-                LazyVGrid(
-                    columns: columns,
-                    alignment: .leading,
-                    spacing: cardSpacing
-                ) {
-                    ForEach(filteredDevices) { device in
-                        DeviceCard(device: device)
-                    }
+            LazyVGrid(
+                columns: columns,
+                alignment: .leading,
+                spacing: 20
+            ) {
+                ForEach(visibleDevices) { device in
+                    DeviceCard(device: device)
                 }
             }
         }
-        .contentMargins(.horizontal, 20, for: .scrollContent)
-        .contentMargins(.vertical, 20, for: .scrollContent)
+        .overlay {
+            if visibleDevices.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+        .contentMargins(20, for: .scrollContent)
         .navigationTitle("设备")
         .toolbar {
-#if os(visionOS)
             ToolbarItem(placement: .primaryAction) {
                 Button("添加", systemImage: "plus") {}
             }
-#else
-            ToolbarSpacer(.flexible)
-
-            ToolbarItem {
-                Button("添加", systemImage: "plus") {}
-            }
-#endif
         }
         .toolbar(removing: .title)
     }
@@ -87,6 +62,49 @@ private struct DeviceCard: View {
     @State private var isFavorite = false
 
     var body: some View {
+        Group {
+#if os(visionOS)
+            cardContent
+                .glassBackgroundEffect(
+                    in: .rect(cornerRadius: 22, style: .continuous)
+                )
+#else
+            cardContent
+                .glassEffect(
+                    .regular,
+                    in: .rect(cornerRadius: 22, style: .continuous)
+                )
+#endif
+        }
+        .shadow(
+            color: device.isOnline
+                ? device.color.opacity(0.18)
+                : Color.black.opacity(0.12),
+            radius: 16,
+            y: 8
+        )
+        .contentShape(.rect(cornerRadius: 22, style: .continuous))
+#if os(iOS)
+        .contentShape(
+            .contextMenuPreview,
+            .rect(cornerRadius: 22, style: .continuous)
+        )
+#endif
+        .onHover { isHovered = $0 }
+        .animation(.smooth(duration: 0.8), value: isHovered)
+        .contextMenu {
+            Toggle(isOn: $isFavorite) {
+                Label("收藏", systemImage: "star")
+            }
+
+            Button {} label: {
+                Label("更多", systemImage: "ellipsis")
+            }
+        }
+        .accessibilityIdentifier("device-card-\(device.id)")
+    }
+
+    private var cardContent: some View {
         ZStack {
             LinearGradient(
                 colors: [
@@ -96,6 +114,7 @@ private struct DeviceCard: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .opacity(0.78)
             .saturation(device.isOnline ? 1 : 0)
 
             Circle()
@@ -141,15 +160,10 @@ private struct DeviceCard: View {
             .padding(14)
             .accessibilityElement(children: .combine)
 
+#if os(macOS)
             if isHovered {
-                Group {
-#if os(visionOS)
+                GlassEffectContainer(spacing: 4) {
                     cardActionButtons
-#else
-                    GlassEffectContainer(spacing: 4) {
-                        cardActionButtons
-                    }
-#endif
                 }
                 .frame(
                     maxWidth: .infinity,
@@ -159,6 +173,7 @@ private struct DeviceCard: View {
                 .padding(10)
                 .transition(.opacity)
             }
+#endif
         }
         .foregroundStyle(.white)
         .aspectRatio(16 / 9, contentMode: .fit)
@@ -167,72 +182,39 @@ private struct DeviceCard: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(.white.opacity(0.14), lineWidth: 1)
         }
-        .shadow(
-            color: device.isOnline
-                ? device.color.opacity(0.18)
-                : Color.black.opacity(0.12),
-            radius: 16,
-            y: 8
-        )
-        .contentShape(.rect(cornerRadius: 22, style: .continuous))
-        .onHover { isHovered = $0 }
-        .animation(.smooth(duration: 0.8), value: isHovered)
-        .accessibilityIdentifier("device-card-\(device.id)")
     }
 
+#if os(macOS)
     private var cardActionButtons: some View {
         HStack(spacing: 8) {
-            CardActionButton(
-                title: isFavorite ? "取消收藏" : "收藏",
-                systemImage: isFavorite ? "star.fill" : "star",
-                foregroundStyle: isFavorite ? .yellow : .white
-            ) {
+            Button {
                 isFavorite.toggle()
-            }
-
-            CardActionButton(
-                title: "更多",
-                systemImage: "ellipsis",
-                foregroundStyle: .white
-            ) {}
-        }
-    }
-}
-
-private struct CardActionButton: View {
-    let title: String
-    let systemImage: String
-    let foregroundStyle: Color
-    let action: () -> Void
-
-    var body: some View {
-        styledButton
-            .accessibilityLabel(title)
-            .help(title)
-    }
-
-    @ViewBuilder
-    private var styledButton: some View {
-#if os(visionOS)
-        button
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-#else
-        button
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
-#endif
-    }
-
-    private var button: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(foregroundStyle)
+            } label: {
+                Label(
+                    isFavorite ? "取消收藏" : "收藏",
+                    systemImage: isFavorite ? "star.fill" : "star"
+                )
+                .labelStyle(.iconOnly)
                 .frame(width: 30, height: 30)
                 .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .foregroundStyle(isFavorite ? .yellow : .white)
+            .help(isFavorite ? "取消收藏" : "收藏")
+
+            Button {} label: {
+                Label("更多", systemImage: "ellipsis")
+                    .labelStyle(.iconOnly)
+                    .frame(width: 30, height: 30)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .help("更多")
         }
     }
+#endif
 }
 
 private struct Device: Identifiable {
@@ -276,7 +258,7 @@ private struct Device: Identifiable {
 
 #Preview {
     NavigationStack {
-        DevicesView(searchText: .constant(""))
+        DevicesView(searchText: "")
     }
     .frame(minWidth: 390, minHeight: 720)
 }

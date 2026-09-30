@@ -9,9 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var searchText = ""
-#if os(iOS)
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-#endif
 
     var body: some View {
 #if os(macOS)
@@ -49,18 +46,16 @@ struct ContentView: View {
     }
 
     private var searchableDevices: some View {
-        DevicesView(searchText: $searchText)
-            .searchable(
-                text: $searchText,
-                placement: .toolbar,
-                prompt: "搜索"
-            )
+        DevicesView(searchText: searchText)
+            .searchable(text: $searchText, prompt: "搜索")
     }
 #elseif os(iOS)
     private var mobileContent: some View {
         TabView {
             Tab("设备", systemImage: "desktopcomputer") {
-                devicesContent
+                NavigationStack {
+                    DevicesView(searchText: searchText)
+                }
             }
 
             Tab("应用", systemImage: "square.grid.2x2") {
@@ -69,40 +64,21 @@ struct ContentView: View {
                 }
             }
 
-            if horizontalSizeClass == .compact {
-                Tab(role: .search) {
-                    NavigationStack {
-                        DevicesView(searchText: $searchText)
-                    }
-                    .searchable(text: $searchText, prompt: "搜索设备")
+            Tab(role: .search) {
+                NavigationStack {
+                    DevicesView(searchText: searchText)
                 }
             }
         }
+        .searchable(text: $searchText, prompt: "搜索设备")
         .tabViewSearchActivation(.searchTabSelection)
-    }
-
-    @ViewBuilder
-    private var devicesContent: some View {
-        NavigationStack {
-            if horizontalSizeClass == .compact {
-                DevicesView(searchText: .constant(""))
-            } else {
-                DevicesView(searchText: $searchText)
-                    .searchable(
-                        text: $searchText,
-                        placement: .toolbar,
-                        prompt: "搜索"
-                    )
-                    .searchToolbarBehavior(.minimize)
-            }
-        }
     }
 #else
     private var spatialContent: some View {
         TabView {
             Tab("设备", systemImage: "desktopcomputer") {
                 NavigationStack {
-                    DevicesView(searchText: $searchText)
+                    DevicesView(searchText: searchText)
                         .searchable(text: $searchText, prompt: "搜索")
                 }
             }
