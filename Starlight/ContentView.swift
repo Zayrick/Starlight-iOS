@@ -63,8 +63,8 @@ struct ContentView: View {
     private var searchableDevices: some View {
         NavigationStack {
             DevicesView(searchText: searchText)
+                .searchable(text: $searchText, placement: .toolbar, prompt: "搜索")
         }
-        .searchable(text: $searchText, prompt: "搜索")
     }
 #elseif os(iOS)
     private var mobileContent: some View {

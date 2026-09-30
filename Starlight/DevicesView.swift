@@ -74,6 +74,10 @@ struct DevicesView: View {
             DeviceDetailView(hostID: hostID)
         }
         .toolbar {
+#if os(macOS)
+            // Trailing, just before the search field
+            ToolbarSpacer(.flexible)
+#endif
             ToolbarItem(placement: .primaryAction) {
                 Button("添加", systemImage: "plus") {
                     isAddingDevice = true
