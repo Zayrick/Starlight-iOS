@@ -20,6 +20,10 @@ nonisolated enum StreamSettings {
         static let touchInput = "input.touch"
         static let touchMode = "input.touchMode"
         static let mouseMode = "input.mouseMode"
+        static let gamepadEmulation = "gamepad.emulation"
+        static let gamepadSwapsButtons = "gamepad.swapsButtons"
+        static let gamepadFeedback = "gamepad.feedback"
+        static let gamepadUsesDevice = "gamepad.usesDevice"
         static let showsStatistics = "stream.showsStatistics"
     }
 
@@ -112,6 +116,52 @@ nonisolated struct InputSettings: Sendable {
             touchEnabled: defaults.object(forKey: Key.touchInput) as? Bool ?? defaultTouchEnabled,
             touchMode: defaults.string(forKey: Key.touchMode).flatMap(TouchMode.init(rawValue:)) ?? defaultTouchMode,
             mouseMode: defaults.string(forKey: Key.mouseMode).flatMap(MouseMode.init(rawValue:)) ?? defaultMouseMode
+        )
+    }
+}
+
+/// The kind of gamepad the host shows its games.
+nonisolated enum GamepadEmulation: String, CaseIterable, Identifiable {
+    /// Matches the controller, falling back to the host's choice.
+    case automatic
+    case xbox
+    /// Lets games use motion and the touchpad on the host.
+    case playStation
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .automatic: "自动"
+        case .xbox: "Xbox"
+        case .playStation: "PlayStation"
+        }
+    }
+}
+
+/// Gamepad preferences, read when a stream starts.
+nonisolated struct GamepadSettings: Sendable {
+    var emulation: GamepadEmulation
+    /// Swaps A with B and X with Y, for Nintendo's layout.
+    var swapsButtons: Bool
+    /// Rumble and DualSense trigger effects.
+    var feedback: Bool
+    /// The device stands in for the motors and motion sensors the first
+    /// gamepad lacks, for controllers the phone sits in.
+    var usesDevice: Bool
+
+    static let defaultEmulation = GamepadEmulation.automatic
+    static let defaultSwapsButtons = false
+    static let defaultFeedback = true
+    static let defaultUsesDevice = false
+
+    static func load(from defaults: UserDefaults = .standard) -> GamepadSettings {
+        typealias Key = StreamSettings.Key
+        return GamepadSettings(
+            emulation: defaults.string(forKey: Key.gamepadEmulation).flatMap(GamepadEmulation.init(rawValue:)) ?? defaultEmulation,
+            swapsButtons: defaults.object(forKey: Key.gamepadSwapsButtons) as? Bool ?? defaultSwapsButtons,
+            feedback: defaults.object(forKey: Key.gamepadFeedback) as? Bool ?? defaultFeedback,
+            usesDevice: defaults.object(forKey: Key.gamepadUsesDevice) as? Bool ?? defaultUsesDevice
         )
     }
 }

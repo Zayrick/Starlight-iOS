@@ -19,6 +19,10 @@ struct SettingsView: View {
     @AppStorage(StreamSettings.Key.touchInput) private var touchEnabled = InputSettings.defaultTouchEnabled
     @AppStorage(StreamSettings.Key.touchMode) private var touchMode = InputSettings.defaultTouchMode
     @AppStorage(StreamSettings.Key.mouseMode) private var mouseMode = InputSettings.defaultMouseMode
+    @AppStorage(StreamSettings.Key.gamepadEmulation) private var gamepadEmulation = GamepadSettings.defaultEmulation
+    @AppStorage(StreamSettings.Key.gamepadSwapsButtons) private var gamepadSwapsButtons = GamepadSettings.defaultSwapsButtons
+    @AppStorage(StreamSettings.Key.gamepadFeedback) private var gamepadFeedback = GamepadSettings.defaultFeedback
+    @AppStorage(StreamSettings.Key.gamepadUsesDevice) private var gamepadUsesDevice = GamepadSettings.defaultUsesDevice
 
     var body: some View {
         Form {
@@ -101,6 +105,28 @@ struct SettingsView: View {
                 Text(inputFooter)
             }
 #endif
+
+            Section {
+                Picker("模拟手柄", selection: $gamepadEmulation) {
+                    ForEach(GamepadEmulation.allCases) { emulation in
+                        Text(emulation.title).tag(emulation)
+                    }
+                }
+
+                Toggle("交换 A/B 与 X/Y", isOn: $gamepadSwapsButtons)
+
+                Toggle("震动与扳机反馈", isOn: $gamepadFeedback)
+
+#if os(iOS)
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    Toggle("用本机代替震动与体感", isOn: $gamepadUsesDevice)
+                }
+#endif
+            } header: {
+                Text("手柄")
+            } footer: {
+                Text(gamepadFooter)
+            }
         }
         .formStyle(.grouped)
         .onChange(of: resolution) { bitrateKbps = recommendedBitrateKbps }
@@ -174,6 +200,28 @@ struct SettingsView: View {
             notes.append("本地光标保持指针可见并直接定位，适合远程桌面，但部分游戏不支持。")
         }
         notes.append("键盘上的 Command 键保留给本机快捷键，不会发送到主机。")
+        return notes.joined(separator: "\n")
+    }
+
+    private var gamepadFooter: String {
+        var notes: [String] = []
+        switch gamepadEmulation {
+        case .automatic:
+            notes.append("主机会模拟与手柄相同类型的手柄，无法识别时由主机决定。")
+        case .xbox:
+            notes.append("主机会模拟 Xbox 手柄，兼容的游戏最多。")
+        case .playStation:
+            notes.append("主机会模拟 PlayStation 手柄，游戏可以使用体感和触摸板。")
+        }
+        if gamepadSwapsButtons {
+            notes.append("按任天堂的布局，按 A 相当于主机上的 B，按 X 相当于主机上的 Y。")
+        }
+#if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone, gamepadUsesDevice {
+            notes.append("适合 Backbone、Kishi 等夹住手机的手柄：第一个手柄没有马达或体感时，由手机震动和感应动作。")
+        }
+#endif
+        notes.append("手柄设置在下次串流时生效。")
         return notes.joined(separator: "\n")
     }
 

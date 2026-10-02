@@ -25,6 +25,16 @@ _Static_assert(SLDecodeResultNeedKeyFrame == DR_NEED_IDR, "Decode results must m
 _Static_assert(SLTouchEventTypeCancelAll == LI_TOUCH_EVENT_CANCEL_ALL, "Touch event types must match");
 _Static_assert(SLMouseButtonX2 == BUTTON_X2, "Mouse buttons must match");
 _Static_assert(SLKeyModifierExtended == MODIFIER_EXTENDED, "Key modifiers must match");
+_Static_assert(SLMotionTypeGyroscope == LI_MOTION_TYPE_GYRO, "Motion types must match");
+_Static_assert(SLGamepadButtonGuide == SPECIAL_FLAG, "Gamepad buttons must match");
+_Static_assert(SLGamepadButtonMisc == MISC_FLAG, "Gamepad buttons must match");
+_Static_assert(SLGamepadButtonY == Y_FLAG, "Gamepad buttons must match");
+_Static_assert(SLGamepadTypeNintendo == LI_CTYPE_NINTENDO, "Gamepad types must match");
+_Static_assert(SLGamepadCapabilityLight == LI_CCAP_RGB_LED, "Gamepad capabilities must match");
+_Static_assert(SLBatteryStateFull == LI_BATTERY_STATE_FULL, "Battery states must match");
+_Static_assert(SLAdaptiveTriggerLeft == DS_EFFECT_LEFT_TRIGGER, "Adaptive triggers must match");
+_Static_assert(SLAdaptiveTriggerRight == DS_EFFECT_RIGHT_TRIGGER, "Adaptive triggers must match");
+_Static_assert(SL_ADAPTIVE_TRIGGER_EFFECT_SIZE == DS_EFFECT_PAYLOAD_SIZE, "Adaptive trigger effects must match");
 
 // Serializes starting and stopping sessions
 static pthread_mutex_t sessionLock = PTHREAD_MUTEX_INITIALIZER;
@@ -85,6 +95,38 @@ static void clLogMessage(const char* format, ...) {
     va_end(args);
 
     callbacks.log(callbacks.context, message);
+}
+
+static void clRumble(unsigned short controllerNumber, unsigned short lowFreqMotor, unsigned short highFreqMotor) {
+    if (callbacks.gamepadRumble) {
+        callbacks.gamepadRumble(callbacks.context, controllerNumber, lowFreqMotor, highFreqMotor);
+    }
+}
+
+static void clRumbleTriggers(uint16_t controllerNumber, uint16_t leftTriggerMotor, uint16_t rightTriggerMotor) {
+    if (callbacks.gamepadTriggerRumble) {
+        callbacks.gamepadTriggerRumble(callbacks.context, controllerNumber, leftTriggerMotor, rightTriggerMotor);
+    }
+}
+
+static void clSetMotionEventState(uint16_t controllerNumber, uint8_t motionType, uint16_t reportRateHz) {
+    if (callbacks.gamepadMotionRequested) {
+        callbacks.gamepadMotionRequested(callbacks.context, controllerNumber, (SLMotionType)motionType, reportRateHz);
+    }
+}
+
+static void clSetAdaptiveTriggers(uint16_t controllerNumber, uint8_t eventFlags, uint8_t typeLeft, uint8_t typeRight,
+                                  uint8_t* left, uint8_t* right) {
+    if (callbacks.gamepadAdaptiveTriggers) {
+        callbacks.gamepadAdaptiveTriggers(callbacks.context, controllerNumber, (SLAdaptiveTriggers)eventFlags,
+                                          typeLeft, left, typeRight, right);
+    }
+}
+
+static void clSetControllerLED(uint16_t controllerNumber, uint8_t r, uint8_t g, uint8_t b) {
+    if (callbacks.gamepadLightChanged) {
+        callbacks.gamepadLightChanged(callbacks.context, controllerNumber, r, g, b);
+    }
 }
 
 #pragma mark - Video
@@ -449,6 +491,11 @@ int32_t SLStreamStart(const SLStreamConfiguration* configuration, const SLStream
     listenerCallbacks.connectionStatusUpdate = clConnectionStatusUpdate;
     listenerCallbacks.setHdrMode = clSetHdrMode;
     listenerCallbacks.logMessage = clLogMessage;
+    listenerCallbacks.rumble = clRumble;
+    listenerCallbacks.rumbleTriggers = clRumbleTriggers;
+    listenerCallbacks.setMotionEventState = clSetMotionEventState;
+    listenerCallbacks.setControllerLED = clSetControllerLED;
+    listenerCallbacks.setAdaptiveTriggers = clSetAdaptiveTriggers;
 
     DECODER_RENDERER_CALLBACKS videoCallbacks;
     LiInitializeVideoCallbacks(&videoCallbacks);
@@ -611,4 +658,43 @@ void SLInputSendText(const char *text, uint32_t length) {
     pthread_rwlock_rdlock(&inputLock);
     LiSendUtf8TextEvent(text, length);
     pthread_rwlock_unlock(&inputLock);
+}
+
+#pragma mark - Gamepads
+
+bool SLInputSendGamepadArrival(uint8_t gamepad, uint16_t activeGamepadMask, SLGamepadType type,
+                               SLGamepadButtons supportedButtons, SLGamepadCapabilities capabilities) {
+    pthread_rwlock_rdlock(&inputLock);
+    int result = LiSendControllerArrivalEvent(gamepad, activeGamepadMask, type, supportedButtons, capabilities);
+    pthread_rwlock_unlock(&inputLock);
+    return result == 0;
+}
+
+void SLInputSendGamepadState(uint8_t gamepad, uint16_t activeGamepadMask, SLGamepadButtons buttons,
+                             uint8_t leftTrigger, uint8_t rightTrigger,
+                             int16_t leftStickX, int16_t leftStickY, int16_t rightStickX, int16_t rightStickY) {
+    pthread_rwlock_rdlock(&inputLock);
+    LiSendMultiControllerEvent(gamepad, (short)activeGamepadMask, (int)buttons, leftTrigger, rightTrigger,
+                               leftStickX, leftStickY, rightStickX, rightStickY);
+    pthread_rwlock_unlock(&inputLock);
+}
+
+void SLInputSendGamepadMotion(uint8_t gamepad, SLMotionType type, float x, float y, float z) {
+    pthread_rwlock_rdlock(&inputLock);
+    LiSendControllerMotionEvent(gamepad, type, x, y, z);
+    pthread_rwlock_unlock(&inputLock);
+}
+
+void SLInputSendGamepadBattery(uint8_t gamepad, SLBatteryState state, uint8_t percentage) {
+    pthread_rwlock_rdlock(&inputLock);
+    LiSendControllerBatteryEvent(gamepad, state, percentage);
+    pthread_rwlock_unlock(&inputLock);
+}
+
+bool SLInputSendGamepadTouch(uint8_t gamepad, SLTouchEventType type, uint32_t pointerID,
+                             float x, float y, float pressure) {
+    pthread_rwlock_rdlock(&inputLock);
+    int result = LiSendControllerTouchEvent(gamepad, type, pointerID, x, y, pressure);
+    pthread_rwlock_unlock(&inputLock);
+    return result == 0;
 }

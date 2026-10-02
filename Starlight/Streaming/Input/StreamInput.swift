@@ -2,7 +2,7 @@
 //  StreamInput.swift
 //  Starlight
 //
-//  Sends keyboard, mouse and touch input to the host. It remembers what's
+//  Sends keyboard, mouse, touch and gamepad input to the host. It remembers what's
 //  held down, so everything can be released when the stream loses focus or
 //  stops, instead of getting stuck on the host.
 //
@@ -17,8 +17,11 @@ final class StreamInput {
             if !isEnabled {
                 releaseAll()
             }
+            gamepads.isEnabled = isEnabled
         }
     }
+
+    let gamepads = GamepadInput()
 
     /// Size of the video, used to find where it's shown within a view.
     var videoSize: CGSize?
@@ -191,7 +194,7 @@ final class StreamInput {
 
     // MARK: - Focus
 
-    /// Lets go of every key, button and touch, e.g. when focus moves away and
+    /// Lets go of every key, button, touch and gamepad, e.g. when focus moves away and
     /// their release events won't arrive.
     func releaseAll() {
         let keys = keysDown
@@ -204,6 +207,7 @@ final class StreamInput {
         }
         buttonsDown.removeAll()
         cancelTouches()
+        gamepads.releaseAll()
         pendingMotion = .zero
         pendingScroll = .zero
     }

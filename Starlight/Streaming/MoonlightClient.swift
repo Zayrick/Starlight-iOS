@@ -93,6 +93,20 @@ nonisolated final class MoonlightClient: @unchecked Sendable {
         /// `errorCode` is 0 when the host ended the session normally.
         case connectionTerminated(errorCode: Int, ports: String?)
         case connectionStatusChanged(isPoor: Bool)
+        case gamepadFeedback(gamepad: Int, GamepadFeedback)
+    }
+
+    /// What the host asks of a gamepad, e.g. to rumble.
+    enum GamepadFeedback: Sendable {
+        /// Motor strengths are 0...1 and last until changed.
+        case rumble(lowFrequency: Double, highFrequency: Double)
+        case triggerRumble(left: Double, right: Double)
+        /// Report the sensor about `rateHz` times a second, or stop when 0.
+        case motion(SLMotionType, rateHz: Int)
+        /// Components are 0...1.
+        case light(red: Double, green: Double, blue: Double)
+        /// DualSense trigger effects, nil for a trigger left as it is.
+        case adaptiveTriggers(left: AdaptiveTriggerEffect?, right: AdaptiveTriggerEffect?)
     }
 
     static let noVideoTrafficError = -100
@@ -281,6 +295,46 @@ nonisolated final class MoonlightClient: @unchecked Sendable {
         }
         callbacks.audioCleanup = { context in
             MoonlightClient.client(context).audioRenderer.stop()
+        }
+
+        callbacks.gamepadRumble = { context, gamepad, low, high in
+            MoonlightClient.client(context).eventContinuation.yield(.gamepadFeedback(
+                gamepad: Int(gamepad),
+                .rumble(lowFrequency: Double(low) / 65535, highFrequency: Double(high) / 65535)
+            ))
+        }
+        callbacks.gamepadTriggerRumble = { context, gamepad, left, right in
+            MoonlightClient.client(context).eventContinuation.yield(.gamepadFeedback(
+                gamepad: Int(gamepad),
+                .triggerRumble(left: Double(left) / 65535, right: Double(right) / 65535)
+            ))
+        }
+        callbacks.gamepadMotionRequested = { context, gamepad, type, rate in
+            MoonlightClient.client(context).eventContinuation.yield(.gamepadFeedback(
+                gamepad: Int(gamepad),
+                .motion(type, rateHz: Int(rate))
+            ))
+        }
+        callbacks.gamepadLightChanged = { context, gamepad, red, green, blue in
+            MoonlightClient.client(context).eventContinuation.yield(.gamepadFeedback(
+                gamepad: Int(gamepad),
+                .light(red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255)
+            ))
+        }
+        callbacks.gamepadAdaptiveTriggers = { context, gamepad, triggers, leftType, left, rightType, right in
+            // Copied now, the parameters don't outlive the call
+            func effect(_ trigger: SLAdaptiveTriggers, _ type: UInt8, _ parameters: UnsafePointer<UInt8>?) -> AdaptiveTriggerEffect? {
+                guard triggers.contains(trigger), let parameters else { return nil }
+                let bytes = Array(UnsafeBufferPointer(start: parameters, count: Int(SL_ADAPTIVE_TRIGGER_EFFECT_SIZE)))
+                return AdaptiveTriggerEffect(type: type, parameters: bytes)
+            }
+            let left = effect(.left, leftType, left)
+            let right = effect(.right, rightType, right)
+            guard left != nil || right != nil else { return }
+            MoonlightClient.client(context).eventContinuation.yield(.gamepadFeedback(
+                gamepad: Int(gamepad),
+                .adaptiveTriggers(left: left, right: right)
+            ))
         }
     }
 }

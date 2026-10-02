@@ -286,6 +286,9 @@ final class StreamSession: Identifiable {
 
         case .connectionStatusChanged(let isPoor):
             isConnectionPoor = isPoor
+
+        case .gamepadFeedback(let gamepad, let feedback):
+            input.gamepads.apply(feedback, to: gamepad)
         }
     }
 

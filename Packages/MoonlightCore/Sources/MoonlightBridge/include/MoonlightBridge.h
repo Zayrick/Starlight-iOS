@@ -76,6 +76,22 @@ typedef struct {
 
 #pragma mark - Callbacks
 
+/// Motion sensors, matching moonlight-common-c's LI_MOTION_TYPE_* values.
+typedef CF_ENUM(uint8_t, SLMotionType) {
+    SLMotionTypeAccelerometer = 0x01,
+    SLMotionTypeGyroscope = 0x02,
+};
+
+/// Which DualSense triggers an adaptive trigger event programs, matching
+/// moonlight-common-c's DS_EFFECT_* values.
+typedef CF_OPTIONS(uint8_t, SLAdaptiveTriggers) {
+    SLAdaptiveTriggerRight = 0x04,
+    SLAdaptiveTriggerLeft = 0x08,
+};
+
+/// Length of a DualSense trigger effect's parameters.
+#define SL_ADAPTIVE_TRIGGER_EFFECT_SIZE 10
+
 typedef CF_ENUM(int32_t, SLVideoBufferType) {
     SLVideoBufferTypeSPS = 1,
     SLVideoBufferTypePPS = 2,
@@ -135,6 +151,20 @@ typedef struct {
     int32_t (*audioSetup)(void* context, int32_t channelCount, int32_t sampleRate);
     /// SLStreamRenderAudio() must not be called anymore once this returns.
     void (*audioCleanup)(void* context);
+
+    // Gamepad feedback from the host. It may name gamepads that aren't there.
+
+    /// Motor strengths are 0...65535 and last until changed, 0 turning them off.
+    void (*gamepadRumble)(void* context, uint16_t gamepad, uint16_t lowFrequencyMotor, uint16_t highFrequencyMotor);
+    void (*gamepadTriggerRumble)(void* context, uint16_t gamepad, uint16_t leftTriggerMotor, uint16_t rightTriggerMotor);
+    /// The host wants the sensor reported at about `reportRateHz`, or stopped when 0.
+    void (*gamepadMotionRequested)(void* context, uint16_t gamepad, SLMotionType type, uint16_t reportRateHz);
+    void (*gamepadLightChanged)(void* context, uint16_t gamepad, uint8_t red, uint8_t green, uint8_t blue);
+    /// DualSense trigger effects for the `triggers` given, each a type byte
+    /// followed by SL_ADAPTIVE_TRIGGER_EFFECT_SIZE bytes of parameters, as
+    /// the DualSense takes them. The parameters are only valid during the call.
+    void (*gamepadAdaptiveTriggers)(void* context, uint16_t gamepad, SLAdaptiveTriggers triggers,
+                                    uint8_t leftType, const uint8_t* left, uint8_t rightType, const uint8_t* right);
 } SLStreamCallbacks;
 
 #pragma mark - Session
@@ -239,6 +269,93 @@ void SLInputSendKey(int16_t keyCode, bool pressed, SLKeyModifiers modifiers, boo
 
 /// Types `length` bytes of UTF-8 text on the host, whatever its layout.
 void SLInputSendText(const char *text, uint32_t length);
+
+#pragma mark - Gamepads
+
+/// Gamepads are numbered 0...15, and every event carries a mask with the bit
+/// of each one present.
+#define SL_MAX_GAMEPADS 16
+
+/// Gamepad buttons, matching moonlight-common-c's *_FLAG values.
+typedef CF_OPTIONS(uint32_t, SLGamepadButtons) {
+    SLGamepadButtonUp = 0x0001,
+    SLGamepadButtonDown = 0x0002,
+    SLGamepadButtonLeft = 0x0004,
+    SLGamepadButtonRight = 0x0008,
+    SLGamepadButtonStart = 0x0010,
+    SLGamepadButtonBack = 0x0020,
+    SLGamepadButtonLeftStick = 0x0040,
+    SLGamepadButtonRightStick = 0x0080,
+    SLGamepadButtonLeftShoulder = 0x0100,
+    SLGamepadButtonRightShoulder = 0x0200,
+    SLGamepadButtonGuide = 0x0400,
+    SLGamepadButtonA = 0x1000,
+    SLGamepadButtonB = 0x2000,
+    SLGamepadButtonX = 0x4000,
+    SLGamepadButtonY = 0x8000,
+    SLGamepadButtonPaddle1 = 0x010000,
+    SLGamepadButtonPaddle2 = 0x020000,
+    SLGamepadButtonPaddle3 = 0x040000,
+    SLGamepadButtonPaddle4 = 0x080000,
+    /// The touchpad click on Sony gamepads.
+    SLGamepadButtonTouchpad = 0x100000,
+    /// Share, capture or mute.
+    SLGamepadButtonMisc = 0x200000,
+};
+
+/// Matching moonlight-common-c's LI_CTYPE_* values.
+typedef CF_ENUM(uint8_t, SLGamepadType) {
+    SLGamepadTypeUnknown = 0x00,
+    SLGamepadTypeXbox = 0x01,
+    SLGamepadTypePlayStation = 0x02,
+    SLGamepadTypeNintendo = 0x03,
+};
+
+/// Matching moonlight-common-c's LI_CCAP_* values.
+typedef CF_OPTIONS(uint16_t, SLGamepadCapabilities) {
+    SLGamepadCapabilityAnalogTriggers = 0x01,
+    SLGamepadCapabilityRumble = 0x02,
+    SLGamepadCapabilityTriggerRumble = 0x04,
+    SLGamepadCapabilityTouchpad = 0x08,
+    SLGamepadCapabilityAccelerometer = 0x10,
+    SLGamepadCapabilityGyroscope = 0x20,
+    SLGamepadCapabilityBattery = 0x40,
+    SLGamepadCapabilityLight = 0x80,
+};
+
+/// Matching moonlight-common-c's LI_BATTERY_STATE_* values.
+typedef CF_ENUM(uint8_t, SLBatteryState) {
+    SLBatteryStateUnknown = 0x00,
+    SLBatteryStateNotPresent = 0x01,
+    SLBatteryStateDischarging = 0x02,
+    SLBatteryStateCharging = 0x03,
+    SLBatteryStateNotCharging = 0x04,
+    SLBatteryStateFull = 0x05,
+};
+
+/// Tells the host about a new gamepad, so it can pick a matching virtual one.
+/// Returns false when it couldn't be sent, e.g. before the input stream is up.
+bool SLInputSendGamepadArrival(uint8_t gamepad, uint16_t activeGamepadMask, SLGamepadType type,
+                               SLGamepadButtons supportedButtons, SLGamepadCapabilities capabilities);
+
+/// The full state of a gamepad. Triggers are 0...255, sticks -32767...32767
+/// with positive `y` up. A gamepad is removed by sending it zeroed, with its
+/// bit cleared in `activeGamepadMask`.
+void SLInputSendGamepadState(uint8_t gamepad, uint16_t activeGamepadMask, SLGamepadButtons buttons,
+                             uint8_t leftTrigger, uint8_t rightTrigger,
+                             int16_t leftStickX, int16_t leftStickY, int16_t rightStickX, int16_t rightStickY);
+
+/// Accelerometer readings in m/s² including gravity, gyroscope readings in
+/// deg/s, along SDL's axes.
+void SLInputSendGamepadMotion(uint8_t gamepad, SLMotionType type, float x, float y, float z);
+
+/// `percentage` is 0...100, or 255 when unknown.
+void SLInputSendGamepadBattery(uint8_t gamepad, SLBatteryState state, uint8_t percentage);
+
+/// A finger on the gamepad's touchpad, with `x` and `y` normalized like
+/// SLInputSendTouch(). Returns false if the host doesn't support it.
+bool SLInputSendGamepadTouch(uint8_t gamepad, SLTouchEventType type, uint32_t pointerID,
+                             float x, float y, float pressure);
 
 #ifdef __cplusplus
 }
