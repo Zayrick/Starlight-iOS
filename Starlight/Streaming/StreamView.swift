@@ -49,6 +49,10 @@ struct StreamView: View {
                     }
                 }
                 .padding(2)
+
+                // Mirrors the drawer's handle, nothing to pull out yet
+                StreamEdgeHandle(edge: .trailing, isDashed: true, followsPull: true)
+                    .padding(2)
             }
 #endif
         }
