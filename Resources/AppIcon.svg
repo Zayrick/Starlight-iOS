@@ -1,0 +1,28 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1024"
+  height="1024"
+  viewBox="0 0 1024 1024"
+  fill="none"
+>
+  <title>Starlight App Icon</title>
+  <desc>A white four-point star on a gray background.</desc>
+  <rect id="background" width="1024" height="1024" fill="#565c64" />
+  <g
+    id="star-foreground"
+    fill="#ffffff"
+    stroke="#ffffff"
+    stroke-width="7.0811"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  >
+    <path id="segment-01" d="M524.3918 482.0833 L524.3918 85.5405 Q542.0947 266.1090 641.2304 365.2447 Z" />
+    <path id="segment-02" d="M541.9167 499.6082 L658.7553 382.7696 Q757.8910 481.9053 938.4595 499.6082 Z" />
+    <path id="segment-03" d="M541.9167 524.3918 L938.4595 524.3918 Q757.8910 542.0947 658.7553 641.2304 Z" />
+    <path id="segment-04" d="M524.3918 541.9167 L641.2304 658.7553 Q542.0947 757.8910 524.3918 938.4595 Z" />
+    <path id="segment-05" d="M499.6082 541.9167 L499.6082 938.4595 Q481.9053 757.8910 382.7696 658.7553 Z" />
+    <path id="segment-06" d="M482.0833 524.3918 L365.2447 641.2304 Q266.1090 542.0947 85.5405 524.3918 Z" />
+    <path id="segment-07" d="M482.0833 499.6082 L85.5405 499.6082 Q266.1090 481.9053 365.2447 382.7696 Z" />
+    <path id="segment-08" d="M499.6082 482.0833 L382.7696 365.2447 Q481.9053 266.1090 499.6082 85.5405 Z" />
+  </g>
+</svg>
