@@ -153,55 +153,41 @@ private struct DeviceCard: View {
         colorScheme == .dark ? .black : .white
     }
 
+    private let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+
     var body: some View {
-        Group {
-#if os(visionOS)
-            cardContent
-                .glassBackgroundEffect(
-                    in: .rect(cornerRadius: 22, style: .continuous)
-                )
-#else
-            cardContent
-                .glassEffect(
-                    .regular,
-                    in: .rect(cornerRadius: 22, style: .continuous)
-                )
-#endif
-        }
-        .shadow(
-            color: .black.opacity(host.isConnected ? 0.16 : 0.1),
-            radius: 16,
-            y: 8
-        )
-        .contentShape(.rect(cornerRadius: 22, style: .continuous))
+        cardContent
+            .shadow(
+                color: .black.opacity(host.isConnected ? 0.16 : 0.1),
+                radius: 16,
+                y: 8
+            )
+            .contentShape(shape)
 #if os(iOS)
-        .contentShape(
-            .contextMenuPreview,
-            .rect(cornerRadius: 22, style: .continuous)
-        )
+            .contentShape(.contextMenuPreview, shape)
 #endif
-        .onHover { isHovered = $0 }
-        .animation(.smooth(duration: 0.8), value: isHovered)
-        .contextMenu {
-            Toggle(isOn: $isFavorite) {
-                Label("收藏", systemImage: "star")
-            }
+            .onHover { isHovered = $0 }
+            .animation(.smooth(duration: 0.8), value: isHovered)
+            .contextMenu {
+                Toggle(isOn: $isFavorite) {
+                    Label("收藏", systemImage: "star")
+                }
 
-            Divider()
+                Divider()
 
-            Button(role: .destructive) {
-                hostStore.removeHost(id: host.id)
-            } label: {
-                Label("删除设备", systemImage: "trash")
+                Button(role: .destructive) {
+                    hostStore.removeHost(id: host.id)
+                } label: {
+                    Label("删除设备", systemImage: "trash")
+                }
             }
-        }
-        .task(id: host.isOnline && host.isPaired) {
-            // Fetch the app list once so the background can show box art
-            if host.isOnline, host.isPaired, host.apps.isEmpty,
-               hostStore.appListStates[host.id] == nil {
-                await hostStore.refreshApps(hostID: host.id)
+            .task(id: host.isOnline && host.isPaired) {
+                // Fetch the app list once so the background can show box art
+                if host.isOnline, host.isPaired, host.apps.isEmpty,
+                   hostStore.appListStates[host.id] == nil {
+                    await hostStore.refreshApps(hostID: host.id)
+                }
             }
-        }
     }
 
     private var wallContent: PhotoWallContent {
@@ -267,12 +253,11 @@ private struct DeviceCard: View {
             }
 #endif
         }
-        .foregroundStyle(.primary)
         .aspectRatio(16 / 9, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+        .clipShape(shape)
         .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+            // 发丝描边，深色模式下勾出卡片与背景的边界
+            shape.strokeBorder(.primary.opacity(0.15), lineWidth: 0.5)
         }
     }
 
@@ -286,20 +271,11 @@ private struct DeviceCard: View {
                 endRadiusFraction: 0.75
             )
 
-            // 顶部状态行
+            // 顶部状态行与底部名称、地址
             LinearGradient(
                 stops: [
                     .init(color: scrimColor.opacity(0.75), location: 0),
-                    .init(color: scrimColor.opacity(0), location: 0.35)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            // 底部名称与地址
-            LinearGradient(
-                stops: [
-                    .init(color: scrimColor.opacity(0), location: 0.3),
+                    .init(color: scrimColor.opacity(0), location: 0.35),
                     .init(color: scrimColor.opacity(0.85), location: 0.75),
                     .init(color: scrimColor.opacity(0.95), location: 1)
                 ],
