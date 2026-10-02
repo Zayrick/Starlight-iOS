@@ -18,6 +18,7 @@ nonisolated enum StreamSettings {
         static let colorRange = "stream.colorRange"
         static let audio = "stream.audio"
         static let touchInput = "input.touch"
+        static let touchMode = "input.touchMode"
         static let mouseMode = "input.mouseMode"
         static let showsStatistics = "stream.showsStatistics"
     }
@@ -74,18 +75,42 @@ nonisolated enum MouseMode: String, CaseIterable, Identifiable {
     }
 }
 
+/// How touches on the screen control the host.
+nonisolated enum TouchMode: String, CaseIterable, Identifiable {
+    /// Touches are sent as they are, which only Sunshine hosts support.
+    case multiTouch
+    /// The screen works like a laptop's trackpad, moving the cursor by the
+    /// finger's motion.
+    case trackpad
+    /// The cursor goes where the finger lands, so a tap clicks right there.
+    case directTap
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .multiTouch: "多点触控"
+        case .trackpad: "触控板"
+        case .directTap: "直接点按"
+        }
+    }
+}
+
 /// Input preferences, which can also be changed while streaming.
 nonisolated struct InputSettings: Sendable {
     var touchEnabled: Bool
+    var touchMode: TouchMode
     var mouseMode: MouseMode
 
     static let defaultTouchEnabled = true
+    static let defaultTouchMode = TouchMode.multiTouch
     static let defaultMouseMode = MouseMode.remoteCursor
 
     static func load(from defaults: UserDefaults = .standard) -> InputSettings {
         typealias Key = StreamSettings.Key
         return InputSettings(
             touchEnabled: defaults.object(forKey: Key.touchInput) as? Bool ?? defaultTouchEnabled,
+            touchMode: defaults.string(forKey: Key.touchMode).flatMap(TouchMode.init(rawValue:)) ?? defaultTouchMode,
             mouseMode: defaults.string(forKey: Key.mouseMode).flatMap(MouseMode.init(rawValue:)) ?? defaultMouseMode
         )
     }

@@ -4,7 +4,8 @@
 //
 //  Shows the video and turns touches, the keyboard and the mouse into host
 //  input. Touches are sent as native multi-touch, which only Sunshine hosts
-//  support. Mouse buttons, scrolling and relative motion come from GCMouse
+//  support, or drive the mouse like a trackpad or by tapping where it should
+//  click (see TouchMouse). Mouse buttons, scrolling and relative motion come from GCMouse
 //  when available, since UIKit doesn't report motion while the pointer is
 //  locked or buttons past the second.
 //
@@ -21,6 +22,7 @@ struct StreamSurface: UIViewRepresentable {
     let input: StreamInput
     let isActive: Bool
     let touchEnabled: Bool
+    let touchMode: TouchMode
     let mouseMode: MouseMode
 
     func makeUIView(context: Context) -> StreamSurfaceView {
@@ -30,6 +32,7 @@ struct StreamSurface: UIViewRepresentable {
     func updateUIView(_ view: StreamSurfaceView, context: Context) {
         view.isActive = isActive
         view.touchEnabled = touchEnabled
+        view.touchMode = touchMode
         view.mouseMode = mouseMode
     }
 }
@@ -56,6 +59,16 @@ final class StreamSurfaceView: UIView {
         }
     }
 
+    var touchMode = TouchMode.multiTouch {
+        didSet {
+            guard touchMode != oldValue else { return }
+            cancelTouches()
+#if os(iOS)
+            touchMouse.mode = touchMode
+#endif
+        }
+    }
+
     var mouseMode = MouseMode.remoteCursor {
         didSet {
             guard mouseMode != oldValue else { return }
@@ -73,6 +86,7 @@ final class StreamSurfaceView: UIView {
     private var lastScrollTranslation = CGPoint.zero
 
 #if os(iOS)
+    private lazy var touchMouse = TouchMouse(mode: touchMode, input: input)
     private var pointerInteraction: UIPointerInteraction?
     private var mouseObservers: [NSObjectProtocol] = []
 #endif
@@ -142,6 +156,9 @@ final class StreamSurfaceView: UIView {
     /// background, so let go of it now.
     @objc private func sceneWillDeactivate() {
         touchIDs.removeAll()
+#if os(iOS)
+        touchMouse.reset()
+#endif
         pointerButtons = []
         input.releaseAll()
     }
@@ -184,6 +201,14 @@ final class StreamSurfaceView: UIView {
     // MARK: - Touches
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+#if os(iOS)
+        if touchEnabled, touchMode != .multiTouch {
+            let fingers = touches.filter(\.isDirect)
+            if !fingers.isEmpty {
+                touchMouse.touchesBegan(fingers.sorted { $0.timestamp < $1.timestamp }, in: self)
+            }
+        }
+#endif
         for touch in touches {
             switch touch.type {
             case .indirectPointer:
@@ -191,7 +216,7 @@ final class StreamSurfaceView: UIView {
                 updatePointerButtons(event, released: false)
 #if os(iOS)
             case .direct, .pencil:
-                guard touchEnabled else { continue }
+                guard touchEnabled, touchMode == .multiTouch else { continue }
                 let id = (0...UInt32.max).first { !touchIDs.values.contains($0) }!
                 touchIDs[ObjectIdentifier(touch)] = id
                 send(touch, .down)
@@ -203,6 +228,11 @@ final class StreamSurfaceView: UIView {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+#if os(iOS)
+        if touches.contains(where: \.isDirect) {
+            touchMouse.touchesMoved(in: self)
+        }
+#endif
         for touch in touches {
             if touch.type == .indirectPointer {
                 // Hovering stops while a button is held, so drags land here
@@ -222,6 +252,12 @@ final class StreamSurfaceView: UIView {
     }
 
     private func endTouches(_ touches: Set<UITouch>, event: UIEvent?, type: SLTouchEventType) {
+#if os(iOS)
+        let fingers = touches.filter(\.isDirect)
+        if !fingers.isEmpty {
+            touchMouse.touchesEnded(Array(fingers), cancelled: type == .cancel, in: self)
+        }
+#endif
         for touch in touches {
             if touch.type == .indirectPointer {
                 updatePointerButtons(event, released: true)
@@ -242,6 +278,9 @@ final class StreamSurfaceView: UIView {
     private func cancelTouches() {
         touchIDs.removeAll()
         input.cancelTouches()
+#if os(iOS)
+        touchMouse.reset()
+#endif
     }
 
     // MARK: - Pointer
@@ -420,6 +459,11 @@ extension StreamSurfaceView {
         mouseInput.scroll.xAxis.valueChangedHandler = nil
         mouseInput.scroll.yAxis.valueChangedHandler = nil
     }
+}
+
+private extension UITouch {
+    /// A finger or Apple Pencil on the screen, rather than a pointer.
+    var isDirect: Bool { type == .direct || type == .pencil }
 }
 
 // MARK: - UIPointerInteractionDelegate

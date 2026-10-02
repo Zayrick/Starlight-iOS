@@ -18,6 +18,7 @@ struct StreamSurface: NSViewRepresentable {
     let input: StreamInput
     let isActive: Bool
     let touchEnabled: Bool
+    let touchMode: TouchMode
     let mouseMode: MouseMode
 
     func makeNSView(context: Context) -> StreamSurfaceView {

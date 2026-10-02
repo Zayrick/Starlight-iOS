@@ -47,6 +47,7 @@ final class StreamSession: Identifiable {
 
     /// Start out from the settings and can be changed while streaming.
     var touchEnabled: Bool
+    var touchMode: TouchMode
     var mouseMode: MouseMode
     /// Remembered for later sessions.
     var showsStatistics: Bool {
@@ -69,6 +70,7 @@ final class StreamSession: Identifiable {
         videoRenderer = VideoRenderer()
         let inputSettings = InputSettings.load()
         touchEnabled = inputSettings.touchEnabled
+        touchMode = inputSettings.touchMode
         mouseMode = inputSettings.mouseMode
         showsStatistics = UserDefaults.standard.bool(forKey: StreamSettings.Key.showsStatistics)
     }

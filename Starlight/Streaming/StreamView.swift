@@ -28,6 +28,7 @@ struct StreamView: View {
                 input: session.input,
                 isActive: session.phase == .streaming,
                 touchEnabled: session.touchEnabled,
+                touchMode: session.touchMode,
                 mouseMode: session.mouseMode
             )
             .opacity(session.phase == .streaming ? 1 : 0)

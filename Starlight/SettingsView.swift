@@ -17,6 +17,7 @@ struct SettingsView: View {
     @AppStorage(StreamSettings.Key.colorRange) private var colorRange = StreamColorRange.limited
     @AppStorage(StreamSettings.Key.audio) private var audio = StreamAudioConfiguration.stereo
     @AppStorage(StreamSettings.Key.touchInput) private var touchEnabled = InputSettings.defaultTouchEnabled
+    @AppStorage(StreamSettings.Key.touchMode) private var touchMode = InputSettings.defaultTouchMode
     @AppStorage(StreamSettings.Key.mouseMode) private var mouseMode = InputSettings.defaultMouseMode
 
     var body: some View {
@@ -80,6 +81,13 @@ struct SettingsView: View {
             Section {
 #if os(iOS)
                 Toggle("触控", isOn: $touchEnabled)
+
+                Picker("触控模式", selection: $touchMode) {
+                    ForEach(TouchMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .disabled(!touchEnabled)
 #endif
 
                 Picker("鼠标模式", selection: $mouseMode) {
@@ -141,7 +149,19 @@ struct SettingsView: View {
     private var inputFooter: String {
         var notes: [String] = []
 #if os(iOS)
-        notes.append("触控会以多点触控的形式发送到主机，需要 Sunshine 主机。")
+        if touchEnabled {
+            switch touchMode {
+            case .multiTouch:
+                notes.append("多点触控会把触摸原样发送到主机，需要 Sunshine 主机。")
+            case .trackpad:
+                notes.append("触控板用单指移动光标，轻点为左键，轻点两下并按住可拖移。")
+            case .directTap:
+                notes.append("直接点按会把光标移到手指处，轻点为左键，按住拖动可拖移，长按为右键。")
+            }
+            if touchMode != .multiTouch {
+                notes.append("双指滑动滚动，双指轻点为右键，三指轻点为中键。")
+            }
+        }
 #endif
         switch mouseMode {
         case .remoteCursor:

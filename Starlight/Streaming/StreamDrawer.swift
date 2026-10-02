@@ -29,6 +29,17 @@ struct StreamDrawer: View {
                     }
                     .toggleStyle(TileToggleStyle())
 
+                    section("触控模式") {
+                        Picker("触控模式", selection: $session.touchMode) {
+                            ForEach(TouchMode.allCases) { mode in
+                                Text(mode.title).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .disabled(!session.touchEnabled)
+                    }
+
                     section("鼠标模式") {
                         Picker("鼠标模式", selection: $session.mouseMode) {
                             ForEach(MouseMode.allCases) { mode in
