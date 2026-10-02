@@ -72,6 +72,8 @@ struct StreamDrawer: View {
                 .padding(16)
             }
             .scrollBounceBehavior(.basedOnSize)
+            // Keeps the scroll bar clear of the rounded top corners
+            .contentMargins(.top, 20, for: .scrollIndicators)
 
             HStack(spacing: 10) {
                 Button {
@@ -97,8 +99,12 @@ struct StreamDrawer: View {
         }
         .frame(width: Self.width)
         .frame(maxHeight: .infinity)
-        .glassEffect(.regular, in: .rect(corners: .concentric(minimum: 24), isUniform: true))
+        // The glass only draws behind; scrolled content needs clipping too
+        .clipShape(Self.shape)
+        .glassEffect(.regular, in: Self.shape)
     }
+
+    private static let shape = ConcentricRectangle(corners: .concentric(minimum: 24), isUniform: true)
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
