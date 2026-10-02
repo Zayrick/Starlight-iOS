@@ -22,6 +22,8 @@ nonisolated struct VirtualKey: Hashable, Sendable {
         self.isNonNormalized = isNonNormalized
     }
 
+    static let backspace = VirtualKey(code: 0x08)
+    static let enter = VirtualKey(code: 0x0D)
     static let leftShift = VirtualKey(code: 0xA0)
     static let rightShift = VirtualKey(code: 0xA1)
     static let leftControl = VirtualKey(code: 0xA2)
@@ -103,6 +105,36 @@ nonisolated struct VirtualKey: Hashable, Sendable {
         default: return nil
         }
     }
+
+    /// The key that types `character` on a US layout, and whether it takes
+    /// Shift, for characters typed as text rather than pressed as keys.
+    static func typing(_ character: Character) -> (key: VirtualKey, shifted: Bool)? {
+        guard let usage = hidUsageByCharacter[character] else { return nil }
+        return VirtualKey(hidUsage: usage.usage).map { ($0, usage.shifted) }
+    }
+
+    private static let hidUsageByCharacter: [Character: (usage: Int, shifted: Bool)] = {
+        var usages: [Character: (usage: Int, shifted: Bool)] = [
+            "\n": (0x28, false), "\r": (0x28, false), "\r\n": (0x28, false), "\t": (0x2B, false), " ": (0x2C, false),
+        ]
+        for (offset, letter) in "abcdefghijklmnopqrstuvwxyz".enumerated() {
+            usages[letter] = (0x04 + offset, false)
+            usages[Character(letter.uppercased())] = (0x04 + offset, true)
+        }
+        // Each row starts at its key's usage, unshifted then shifted
+        let rows: [(usage: Int, plain: String, shifted: String)] = [
+            (0x1E, "1234567890", "!@#$%^&*()"),
+            (0x2D, "-=[]\\", "_+{}|"),
+            (0x33, ";'`,./", ":\"~<>?"),
+        ]
+        for row in rows {
+            for (offset, (plain, shifted)) in zip(row.plain, row.shifted).enumerated() {
+                usages[plain] = (row.usage + offset, false)
+                usages[shifted] = (row.usage + offset, true)
+            }
+        }
+        return usages
+    }()
 
 #if os(macOS)
     /// Maps an NSEvent key code (Carbon's kVK_* values).

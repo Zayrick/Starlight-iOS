@@ -18,6 +18,8 @@ struct StreamEdgeHandle: UIViewRepresentable {
     var isDashed = false
     /// Whether the accent itself moves a short way after a pull.
     var followsPull = false
+    /// What VoiceOver reads out, when there's something to activate.
+    var title = "串流选项"
     /// How far the handle is pulled away from its edge, as the finger moves.
     var onPull: ((CGFloat) -> Void)?
     /// How far the handle was pulled when let go, and how fast the finger
@@ -35,6 +37,7 @@ struct StreamEdgeHandle: UIViewRepresentable {
         view.followsPull = followsPull
         // Without anything to open, there's nothing to offer VoiceOver
         view.isAccessibilityElement = onActivate != nil
+        view.accessibilityLabel = title
         view.onPull = onPull
         view.onRelease = onRelease
         view.onActivate = onActivate
@@ -91,8 +94,6 @@ final class StreamEdgeHandleView: UIView {
         accentLayer.lineCap = .round
         accentView.layer.addSublayer(accentLayer)
 
-        isAccessibilityElement = true
-        accessibilityLabel = "串流选项"
         accessibilityTraits = .button
 
         let pull = UIPanGestureRecognizer(target: self, action: #selector(handlePull))

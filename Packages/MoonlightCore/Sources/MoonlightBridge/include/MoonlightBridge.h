@@ -237,6 +237,9 @@ void SLInputSendScroll(int16_t vertical, int16_t horizontal);
 /// host doesn't translate them.
 void SLInputSendKey(int16_t keyCode, bool pressed, SLKeyModifiers modifiers, bool nonNormalized);
 
+/// Types `length` bytes of UTF-8 text on the host, whatever its layout.
+void SLInputSendText(const char *text, uint32_t length);
+
 #ifdef __cplusplus
 }
 #endif

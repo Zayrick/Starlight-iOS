@@ -20,6 +20,8 @@ struct StreamSurface: NSViewRepresentable {
     let touchEnabled: Bool
     let touchMode: TouchMode
     let mouseMode: MouseMode
+    /// Unused, the Mac always has a keyboard.
+    @Binding var isTyping: Bool
 
     func makeNSView(context: Context) -> StreamSurfaceView {
         StreamSurfaceView(hostedLayer: layer, input: input)

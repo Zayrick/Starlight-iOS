@@ -24,6 +24,8 @@ struct StreamSurface: UIViewRepresentable {
     let touchEnabled: Bool
     let touchMode: TouchMode
     let mouseMode: MouseMode
+    /// Whether the software keyboard is up, typing into the host.
+    @Binding var isTyping: Bool
 
     func makeUIView(context: Context) -> StreamSurfaceView {
         StreamSurfaceView(hostedLayer: layer, input: input)
@@ -34,6 +36,8 @@ struct StreamSurface: UIViewRepresentable {
         view.touchEnabled = touchEnabled
         view.touchMode = touchMode
         view.mouseMode = mouseMode
+        view.onTypingEnd = { isTyping = false }
+        view.isTyping = isTyping
     }
 }
 
@@ -48,8 +52,20 @@ final class StreamSurfaceView: UIView {
             if isActive {
                 becomeFirstResponder()
             }
+            updateTyping()
         }
     }
+
+    var isTyping = false {
+        didSet {
+            if isTyping != oldValue {
+                updateTyping()
+            }
+        }
+    }
+
+    /// The keyboard was put away by other means than isTyping.
+    var onTypingEnd: (() -> Void)?
 
     var touchEnabled = true {
         didSet {
@@ -84,6 +100,7 @@ final class StreamSurfaceView: UIView {
     /// Buttons held according to UIKit, only used without a GCMouse.
     private var pointerButtons: UIEvent.ButtonMask = []
     private var lastScrollTranslation = CGPoint.zero
+    private lazy var textField = StreamTextField(input: input)
 
 #if os(iOS)
     private lazy var touchMouse = TouchMouse(mode: touchMode, input: input)
@@ -164,6 +181,28 @@ final class StreamSurfaceView: UIView {
     }
 
     // MARK: - Keyboard
+
+    private func updateTyping() {
+        if isTyping, isActive {
+            if textField.superview == nil {
+                textField.onEnd = { [weak self] in self?.typingEnded() }
+                addSubview(textField)
+            }
+            textField.becomeFirstResponder()
+        } else if textField.isFirstResponder {
+            textField.resignFirstResponder()
+        }
+    }
+
+    private func typingEnded() {
+        // Hardware keys come back here
+        if window != nil {
+            becomeFirstResponder()
+        }
+        if isTyping {
+            onTypingEnd?()
+        }
+    }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
         let unhandled = presses.filter { !handle($0, pressed: true) }

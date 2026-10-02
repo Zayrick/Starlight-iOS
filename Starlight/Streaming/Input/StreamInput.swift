@@ -62,6 +62,21 @@ final class StreamInput {
         }
     }
 
+    /// Types text on the host. Text a US keyboard can type is sent as key
+    /// presses, which reach any app; anything else, like Chinese, as UTF-8
+    /// text.
+    func type(_ text: String) {
+        guard isEnabled, !text.isEmpty else { return }
+        let strokes = text.map(VirtualKey.typing)
+        guard strokes.allSatisfy({ $0 != nil }) else {
+            SLInputSendText(text, UInt32(text.utf8.count))
+            return
+        }
+        for case let (key, shifted)? in strokes {
+            typeShortcut(shifted ? [.leftShift, key] : [key])
+        }
+    }
+
     private func send(_ key: VirtualKey, pressed: Bool) {
         var modifiers = modifiers
         if key.isExtended {

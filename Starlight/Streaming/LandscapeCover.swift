@@ -91,6 +91,13 @@ private final class LandscapeHostingController<Content: View>: UIHostingControll
         }
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // The keyboard covers the stream instead of squeezing it, which
+        // shows as the picture shrinking while it goes away
+        safeAreaRegions.remove(.keyboard)
+    }
+
     override var prefersPointerLocked: Bool {
         prefersPointerLock
     }

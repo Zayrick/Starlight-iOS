@@ -606,3 +606,9 @@ void SLInputSendKey(int16_t keyCode, bool pressed, SLKeyModifiers modifiers, boo
                          (char)modifiers, nonNormalized ? SS_KBE_FLAG_NON_NORMALIZED : 0);
     pthread_rwlock_unlock(&inputLock);
 }
+
+void SLInputSendText(const char *text, uint32_t length) {
+    pthread_rwlock_rdlock(&inputLock);
+    LiSendUtf8TextEvent(text, length);
+    pthread_rwlock_unlock(&inputLock);
+}

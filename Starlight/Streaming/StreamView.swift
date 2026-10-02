@@ -11,6 +11,9 @@ struct StreamView: View {
 
     @Environment(StreamController.self) private var streamController
 
+    /// Whether the software keyboard is up.
+    @State private var isTyping = false
+
 #if os(iOS)
     @State private var isDrawerOpen = false
     /// How much of the drawer a finger has pulled out, while one does.
@@ -29,7 +32,8 @@ struct StreamView: View {
                 isActive: session.phase == .streaming,
                 touchEnabled: session.touchEnabled,
                 touchMode: session.touchMode,
-                mouseMode: session.mouseMode
+                mouseMode: session.mouseMode,
+                isTyping: $isTyping
             )
             .opacity(session.phase == .streaming ? 1 : 0)
 
@@ -50,9 +54,15 @@ struct StreamView: View {
                 }
                 .padding(2)
 
-                // Mirrors the drawer's handle, nothing to pull out yet
-                StreamEdgeHandle(edge: .trailing, isDashed: true, followsPull: true)
-                    .padding(2)
+                // Brings up the keyboard, or puts it away, once let go
+                StreamEdgeHandle(edge: .trailing, isDashed: true, followsPull: true, title: "键盘", onRelease: { distance, _ in
+                    if distance > 0 {
+                        isTyping.toggle()
+                    }
+                }) {
+                    isTyping.toggle()
+                }
+                .padding(2)
             }
 #endif
         }
