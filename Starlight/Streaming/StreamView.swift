@@ -236,7 +236,9 @@ struct StreamView: View {
 
     /// Pushing the open drawer back to the left, on it or beside it.
     private var closeDrawerGesture: some Gesture {
-        DragGesture(minimumDistance: 12)
+        // Measured outside the drawer, whose own space moves with the finger
+        // and would feed its offset back into the drag
+        DragGesture(minimumDistance: 12, coordinateSpace: .named(Self.coordinateSpace))
             .onChanged { value in
                 guard isDrawerOpen else { return }
                 // Leaves vertical drags to the drawer's scroll view
