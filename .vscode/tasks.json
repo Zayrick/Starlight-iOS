@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Starlight: Build for Swift Indexing (iOS Simulator)",
+            "detail": "Build the iOS Simulator app and refresh SourceKit-LSP's Xcode build settings and index. Requires brew install xcode-build-server.",
+            "type": "process",
+            "command": "/bin/bash",
+            "args": ["${workspaceFolder}/.vscode/build-index.sh"],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$swiftc"
+        }
+    ]
+}
