@@ -39,7 +39,7 @@ git submodule update --init --recursive
 
 ## 项目结构
 
-```
+```text
 Starlight/
 ├── GameStream/        主机发现、配对、证书、HTTP 接口
 ├── Streaming/         串流会话、视频与音频渲染、统计
@@ -51,6 +51,10 @@ Packages/MoonlightCore/
 ├── MoonlightCrypto/   基于 CryptoKit 的 AES-GCM
 └── MoonlightBridge/   供 Swift 调用的 C 桥接层
 ```
+
+## 隐私
+
+Starlight 不收集任何个人信息，只与你选择连接的串流主机直接通信。详见 [隐私政策](PRIVACY.md)。
 
 ## 许可证
 

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct AboutView: View {
     static let sourceURL = URL(string: "https://github.com/Zayrick/Starlight-iOS")!
+    static let privacyURL = URL(string: "https://github.com/Zayrick/Starlight-iOS/blob/main/PRIVACY.md")!
 
     var body: some View {
         Form {
@@ -31,6 +32,10 @@ struct AboutView: View {
             Section {
                 Link(destination: Self.sourceURL) {
                     Label("源代码", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+
+                Link(destination: Self.privacyURL) {
+                    Label("隐私政策", systemImage: "hand.raised")
                 }
 
                 NavigationLink {
