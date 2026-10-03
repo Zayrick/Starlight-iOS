@@ -169,8 +169,8 @@ nonisolated struct LaunchRequest: Sendable {
     var hdr: Bool
     var surroundAudioInfo: Int
     /// Lets the host adjust game settings to match the stream.
-    var optimizeGameSettings = true
-    var playAudioOnHost = false
+    var optimizeGameSettings: Bool
+    var playAudioOnHost: Bool
     /// Extra `&key=value` pairs required by moonlight-common-c.
     var extraQuery: String = ""
 }

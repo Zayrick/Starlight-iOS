@@ -16,6 +16,8 @@ struct SettingsView: View {
     @AppStorage(StreamSettings.Key.yuv444) private var yuv444Enabled = false
     @AppStorage(StreamSettings.Key.colorRange) private var colorRange = StreamColorRange.limited
     @AppStorage(StreamSettings.Key.audio) private var audio = StreamAudioConfiguration.stereo
+    @AppStorage(StreamSettings.Key.optimizeGameSettings) private var optimizeGameSettings = StreamSettings.defaultOptimizeGameSettings
+    @AppStorage(StreamSettings.Key.playAudioOnHost) private var playAudioOnHost = StreamSettings.defaultPlayAudioOnHost
     @AppStorage(StreamSettings.Key.touchInput) private var touchEnabled = InputSettings.defaultTouchEnabled
     @AppStorage(StreamSettings.Key.touchMode) private var touchMode = InputSettings.defaultTouchMode
     @AppStorage(StreamSettings.Key.mouseMode) private var mouseMode = InputSettings.defaultMouseMode
@@ -43,10 +45,12 @@ struct SettingsView: View {
                     LabeledContent("码率", value: Self.formatMbps(bitrateKbps))
                     Slider(value: bitrateMbps, in: bitrateMbpsRange, step: 0.5)
                 }
+
+                Toggle("优化游戏设置", isOn: $optimizeGameSettings)
             } header: {
                 Text("视频")
             } footer: {
-                Text("推荐码率 \(Self.formatMbps(recommendedBitrateKbps))，更改分辨率或帧率时会自动重设。")
+                Text("推荐码率 \(Self.formatMbps(recommendedBitrateKbps))，更改分辨率或帧率时会自动重设。\n优化游戏设置允许主机调整游戏的画面设置以匹配串流。")
             }
 
             Section {
@@ -73,12 +77,18 @@ struct SettingsView: View {
                 Text(qualityFooter)
             }
 
-            Section("音频") {
+            Section {
                 Picker("声道", selection: $audio) {
                     ForEach(StreamAudioConfiguration.allCases) { audio in
                         Text(audio.title).tag(audio)
                     }
                 }
+
+                Toggle("在主机上同时播放音频", isOn: $playAudioOnHost)
+            } header: {
+                Text("音频")
+            } footer: {
+                Text("开启后主机的扬声器也会继续出声。")
             }
 
 #if !os(visionOS)

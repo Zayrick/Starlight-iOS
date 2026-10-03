@@ -194,6 +194,8 @@ final class StreamSession: Identifiable {
                     remoteInputKeyID: keyID,
                     hdr: hdr,
                     surroundAudioInfo: MoonlightClient.surroundAudioInfo(channelCount: settings.audio.channelCount),
+                    optimizeGameSettings: settings.optimizeGameSettings,
+                    playAudioOnHost: settings.playAudioOnHost,
                     extraQuery: MoonlightClient.launchQueryParameters
                 ),
                 resume: resume,

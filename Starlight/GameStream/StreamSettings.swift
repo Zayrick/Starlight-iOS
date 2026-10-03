@@ -17,6 +17,8 @@ nonisolated enum StreamSettings {
         static let yuv444 = "stream.yuv444"
         static let colorRange = "stream.colorRange"
         static let audio = "stream.audio"
+        static let optimizeGameSettings = "stream.optimizeGameSettings"
+        static let playAudioOnHost = "stream.playAudioOnHost"
         static let touchInput = "input.touch"
         static let touchMode = "input.touchMode"
         static let mouseMode = "input.mouseMode"
@@ -32,6 +34,8 @@ nonisolated enum StreamSettings {
 
     static let defaultResolution = StreamResolution.r1080p
     static let defaultFrameRate = 60
+    static let defaultOptimizeGameSettings = true
+    static let defaultPlayAudioOnHost = false
 
     static let defaultBitrateKbps = recommendedBitrateKbps(for: defaultResolution.fixedSize!, frameRate: defaultFrameRate)
 
@@ -176,6 +180,10 @@ nonisolated struct ResolvedStreamSettings: Sendable {
     var yuv444: Bool
     var colorRange: StreamColorRange
     var audio: StreamAudioConfiguration
+    /// Lets the host change the game's settings to match the stream.
+    var optimizeGameSettings: Bool
+    /// Keeps the host's speakers playing alongside the stream.
+    var playAudioOnHost: Bool
 
     @MainActor
     static func load(from defaults: UserDefaults = .standard) -> ResolvedStreamSettings {
@@ -192,7 +200,9 @@ nonisolated struct ResolvedStreamSettings: Sendable {
             hdr: defaults.bool(forKey: Key.hdr),
             yuv444: defaults.bool(forKey: Key.yuv444),
             colorRange: defaults.string(forKey: Key.colorRange).flatMap(StreamColorRange.init(rawValue:)) ?? .limited,
-            audio: defaults.string(forKey: Key.audio).flatMap(StreamAudioConfiguration.init(rawValue:)) ?? .stereo
+            audio: defaults.string(forKey: Key.audio).flatMap(StreamAudioConfiguration.init(rawValue:)) ?? .stereo,
+            optimizeGameSettings: defaults.object(forKey: Key.optimizeGameSettings) as? Bool ?? StreamSettings.defaultOptimizeGameSettings,
+            playAudioOnHost: defaults.object(forKey: Key.playAudioOnHost) as? Bool ?? StreamSettings.defaultPlayAudioOnHost
         )
     }
 }
