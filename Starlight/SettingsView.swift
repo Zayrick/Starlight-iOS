@@ -137,6 +137,12 @@ struct SettingsView: View {
             } footer: {
                 Text(gamepadFooter)
             }
+
+            Section {
+                NavigationLink("关于 Starlight") {
+                    AboutView()
+                }
+            }
         }
         .formStyle(.grouped)
         .onChange(of: resolution) { bitrateKbps = recommendedBitrateKbps }

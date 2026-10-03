@@ -76,7 +76,9 @@ struct ContentView: View {
                 .listRowSeparator(.hidden)
 
                 NavigationLink {
-                    SettingsView()
+                    NavigationStack {
+                        SettingsView()
+                    }
                 } label: {
                     Label("设置", systemImage: "gearshape")
                 }
