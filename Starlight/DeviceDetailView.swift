@@ -13,6 +13,8 @@ struct DeviceDetailView: View {
     /// App waiting for confirmation to replace the one running on the host.
     @State private var pendingLaunch: StreamApp?
     @State private var quitErrorMessage: String?
+    @State private var isConfirmingQuit = false
+    @State private var isQuitting = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 130, maximum: 180), spacing: 20)
@@ -72,16 +74,25 @@ struct DeviceDetailView: View {
     @ViewBuilder
     private func content(for host: StreamHost) -> some View {
         if host.pairState != .unpaired {
+            let runningApp = runningApp(for: host)
+
             ScrollView {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
-                    ForEach(host.apps) { app in
-                        appButton(app, on: host)
+                VStack(alignment: .leading, spacing: 24) {
+                    if let runningApp {
+                        runningAppCard(runningApp, on: host)
+                    }
+
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
+                        ForEach(host.apps.filter { $0.id != host.currentGameID }) { app in
+                            appButton(app, on: host)
+                        }
                     }
                 }
+                .animation(.default, value: host.currentGameID)
             }
             .contentMargins(20, for: .scrollContent)
             .overlay {
-                if host.apps.isEmpty {
+                if host.apps.isEmpty && runningApp == nil {
                     emptyAppsView(for: host)
                 }
             }
@@ -117,6 +128,17 @@ struct DeviceDetailView: View {
             } message: {
                 Text(quitErrorMessage ?? "")
             }
+            .alert(
+                "退出“\(runningApp?.name ?? "应用")”？",
+                isPresented: $isConfirmingQuit
+            ) {
+                Button("取消", role: .cancel) {}
+                Button("退出", role: .destructive) {
+                    quitRunningApp(on: host)
+                }
+            } message: {
+                Text("未保存的进度将会丢失。")
+            }
         } else {
             pairPrompt(for: host)
         }
@@ -124,37 +146,54 @@ struct DeviceDetailView: View {
 
     private func appButton(_ app: StreamApp, on host: StreamHost) -> some View {
         let isConnected = host.isOnline && host.isPaired
-        let isRunning = host.currentGameID == app.id
 
         return Button {
-            if let runningID = host.currentGameID, runningID != app.id {
+            if host.currentGameID != nil {
                 pendingLaunch = app
             } else {
                 streamController.start(host: host, app: app)
             }
         } label: {
-            AppTile(app: app, hostID: host.id, isConnected: isConnected, isRunning: isRunning)
+            AppTile(app: app, hostID: host.id, isConnected: isConnected)
         }
         .buttonStyle(.plain)
         .disabled(!isConnected)
-        .contextMenu {
-            if isRunning {
-                Button("退出应用", systemImage: "power", role: .destructive) {
-                    Task {
-                        do {
-                            try await hostStore.quitApp(hostID: host.id)
-                        } catch {
-                            quitErrorMessage = error.localizedDescription
-                        }
-                    }
-                }
-            }
-        }
+    }
+
+    private func runningAppCard(_ app: StreamApp, on host: StreamHost) -> some View {
+        RunningAppCard(
+            app: app,
+            hostID: host.id,
+            isConnected: host.isOnline && host.isPaired,
+            isQuitting: isQuitting,
+            resume: { streamController.start(host: host, app: app) },
+            quit: { isConfirmingQuit = true }
+        )
+    }
+
+    /// The app running on the host, even if it's missing from the app list.
+    private func runningApp(for host: StreamHost) -> StreamApp? {
+        guard let runningID = host.currentGameID else { return nil }
+        return host.apps.first { $0.id == runningID }
+            ?? StreamApp(id: runningID, name: "未知应用", isHDRSupported: false)
     }
 
     private func runningAppTitle(for host: StreamHost) -> String {
         let name = host.apps.first { $0.id == host.currentGameID }?.name ?? "其他应用"
         return "“\(name)”正在运行"
+    }
+
+    private func quitRunningApp(on host: StreamHost) {
+        guard !isQuitting else { return }
+        isQuitting = true
+        Task {
+            defer { isQuitting = false }
+            do {
+                try await hostStore.quitApp(hostID: host.id)
+            } catch {
+                quitErrorMessage = error.localizedDescription
+            }
+        }
     }
 
     @ViewBuilder
@@ -199,39 +238,13 @@ private struct AppTile: View {
     let app: StreamApp
     let hostID: String
     let isConnected: Bool
-    let isRunning: Bool
 
     @Environment(HostStore.self) private var hostStore
     @State private var artwork: CGImage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.quaternary)
-
-                if let artwork {
-                    Image(decorative: artwork, scale: 1)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: "gamecontroller")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            // GameStream box art is 628×888
-            .aspectRatio(628 / 888, contentMode: .fit)
-            .clipShape(.rect(cornerRadius: 14, style: .continuous))
-            .overlay(alignment: .topTrailing) {
-                if isRunning {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .green)
-                        .padding(8)
-                }
-            }
+            BoxArt(artwork: artwork, cornerRadius: 14)
 
             Text(app.name)
                 .font(.subheadline.weight(.medium))
@@ -242,6 +255,76 @@ private struct AppTile: View {
             // Box art is fetched again after every successful handshake
             artwork = isConnected ? await hostStore.artwork(for: app, hostID: hostID) : nil
         }
+    }
+}
+
+/// Shows the app running on the host with shortcuts to resume or quit it.
+private struct RunningAppCard: View {
+    let app: StreamApp
+    let hostID: String
+    let isConnected: Bool
+    let isQuitting: Bool
+    let resume: () -> Void
+    let quit: () -> Void
+
+    @Environment(HostStore.self) private var hostStore
+    @State private var artwork: CGImage?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            BoxArt(artwork: artwork, cornerRadius: 8)
+                .frame(width: 48)
+
+            Text(app.name)
+                .font(.headline)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button("继续", systemImage: "play.fill", action: resume)
+                .prominentButtonStyle()
+
+            Button(role: .destructive, action: quit) {
+                if isQuitting {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Label("退出", systemImage: "power")
+                }
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.bordered)
+            .disabled(isQuitting)
+        }
+        .disabled(!isConnected)
+        .task(id: isConnected ? app.id : nil) {
+            artwork = isConnected ? await hostStore.artwork(for: app, hostID: hostID) : nil
+        }
+    }
+}
+
+/// App box art, or a placeholder while it's unavailable.
+private struct BoxArt: View {
+    let artwork: CGImage?
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.quaternary)
+
+            if let artwork {
+                Image(decorative: artwork, scale: 1)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "gamecontroller")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        // GameStream box art is 628×888
+        .aspectRatio(628 / 888, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 
