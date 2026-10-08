@@ -1,7 +1,18 @@
 {
   "sourceLanguage" : "en",
-  "version" : "1.0",
   "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Starlight"
+          }
+        }
+      }
+    },
     "NSLocalNetworkUsageDescription" : {
       "comment" : "Privacy - Local Network Usage Description",
       "extractionState" : "extracted_with_value",
@@ -32,5 +43,6 @@
         }
       }
     }
-  }
+  },
+  "version" : "1.0"
 }

@@ -2973,24 +2973,24 @@
         }
       }
     },
-    "Stream games and desktops from your computer to iPhone, iPad, Mac, and Apple Vision Pro. Works with Sunshine and NVIDIA GameStream hosts." : {
+    "Stream games and desktops from your computer to your device. Works with Sunshine and NVIDIA GameStream hosts." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将电脑上的游戏和桌面串流到 iPhone、iPad、Mac 和 Apple Vision Pro，支持 Sunshine 与 NVIDIA GameStream 主机。"
+            "value" : "将电脑上的游戏和桌面串流到您的设备，支持 Sunshine 与 NVIDIA GameStream 主机。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "將電腦上的遊戲和桌面串流到 iPhone、iPad、Mac 和 Apple Vision Pro，支援 Sunshine 與 NVIDIA GameStream 主機。"
+            "value" : "將電腦上的遊戲和桌面串流到您的裝置，支援 Sunshine 與 NVIDIA GameStream 主機。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "將電腦上的遊戲和桌面串流至 iPhone、iPad、Mac 及 Apple Vision Pro，支援 Sunshine 及 NVIDIA GameStream 主機。"
+            "value" : "將電腦上的遊戲和桌面串流至您的裝置，支援 Sunshine 及 NVIDIA GameStream 主機。"
           }
         }
       }

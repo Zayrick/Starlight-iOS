@@ -17,7 +17,8 @@ struct DeviceDetailView: View {
     @State private var isQuitting = false
 
     private let columns = [
-        GridItem(.adaptive(minimum: 130, maximum: 180), spacing: 20)
+        // No maximum, so the columns always span the full width
+        GridItem(.adaptive(minimum: 150), spacing: 20)
     ]
 
     var body: some View {
@@ -315,23 +316,23 @@ private struct BoxArt: View {
     let cornerRadius: CGFloat
 
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(.quaternary)
-
-            if let artwork {
-                Image(decorative: artwork, scale: 1)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "gamecontroller")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+        Rectangle()
+            .fill(.quaternary)
+            // Sunshine box art is 3:4; other sizes are cropped to it
+            .aspectRatio(3 / 4, contentMode: .fit)
+            // An overlay, so art in another shape can't widen the tile
+            .overlay {
+                if let artwork {
+                    Image(decorative: artwork, scale: 1)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(systemName: "gamecontroller")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                }
             }
-        }
-        // GameStream box art is 628×888
-        .aspectRatio(628 / 888, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
+            .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 

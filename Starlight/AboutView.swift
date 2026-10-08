@@ -26,7 +26,7 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
             } footer: {
-                Text("Stream games and desktops from your computer to iPhone, iPad, Mac, and Apple Vision Pro. Works with Sunshine and NVIDIA GameStream hosts.")
+                Text("Stream games and desktops from your computer to your device. Works with Sunshine and NVIDIA GameStream hosts.")
             }
 
             Section {
