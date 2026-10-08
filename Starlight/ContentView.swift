@@ -71,7 +71,7 @@ struct ContentView: View {
                 NavigationLink {
                     searchableDevices
                 } label: {
-                    Label("设备", systemImage: "desktopcomputer")
+                    Label("Devices", systemImage: "desktopcomputer")
                 }
                 .listRowSeparator(.hidden)
 
@@ -80,7 +80,7 @@ struct ContentView: View {
                         SettingsView()
                     }
                 } label: {
-                    Label("设置", systemImage: "gearshape")
+                    Label("Settings", systemImage: "gearshape")
                 }
                 .listRowSeparator(.hidden)
             }
@@ -94,19 +94,19 @@ struct ContentView: View {
     private var searchableDevices: some View {
         NavigationStack {
             DevicesView(searchText: searchText)
-                .searchable(text: $searchText, placement: .toolbar, prompt: "搜索")
+                .searchable(text: $searchText, placement: .toolbar, prompt: "Search")
         }
     }
 #elseif os(iOS)
     private var mobileContent: some View {
         TabView {
-            Tab("设备", systemImage: "desktopcomputer") {
+            Tab("Devices", systemImage: "desktopcomputer") {
                 NavigationStack {
                     DevicesView(searchText: "")
                 }
             }
 
-            Tab("设置", systemImage: "gearshape") {
+            Tab("Settings", systemImage: "gearshape") {
                 NavigationStack {
                     SettingsView()
                 }
@@ -117,7 +117,7 @@ struct ContentView: View {
                     DevicesView(searchText: searchText)
                 }
                 // Scoped to the search tab so the devices tab doesn't get its own field
-                .searchable(text: $searchText, prompt: "搜索设备")
+                .searchable(text: $searchText, prompt: "Search Devices")
             }
         }
         .tabViewSearchActivation(.searchTabSelection)
@@ -125,14 +125,14 @@ struct ContentView: View {
 #else
     private var spatialContent: some View {
         TabView {
-            Tab("设备", systemImage: "desktopcomputer") {
+            Tab("Devices", systemImage: "desktopcomputer") {
                 NavigationStack {
                     DevicesView(searchText: searchText)
-                        .searchable(text: $searchText, prompt: "搜索")
+                        .searchable(text: $searchText, prompt: "Search")
                 }
             }
 
-            Tab("设置", systemImage: "gearshape") {
+            Tab("Settings", systemImage: "gearshape") {
                 NavigationStack {
                     SettingsView()
                 }

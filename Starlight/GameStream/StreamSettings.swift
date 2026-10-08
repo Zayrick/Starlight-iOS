@@ -77,8 +77,8 @@ nonisolated enum MouseMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .remoteCursor: "远程光标"
-        case .localCursor: "本地光标"
+        case .remoteCursor: String(localized: "Remote Cursor")
+        case .localCursor: String(localized: "Local Cursor")
         }
     }
 }
@@ -97,9 +97,9 @@ nonisolated enum TouchMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .multiTouch: "多点触控"
-        case .trackpad: "触控板"
-        case .directTap: "直接点按"
+        case .multiTouch: String(localized: "Multi-Touch")
+        case .trackpad: String(localized: "Trackpad")
+        case .directTap: String(localized: "Direct Tap")
         }
     }
 }
@@ -136,7 +136,7 @@ nonisolated enum GamepadEmulation: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .automatic: "自动"
+        case .automatic: String(localized: "Automatic")
         case .xbox: "Xbox"
         case .playStation: "PlayStation"
         }
@@ -240,8 +240,8 @@ nonisolated enum StreamResolution: String, CaseIterable, Identifiable {
         case .r1080p: "1080p"
         case .r1440p: "1440p"
         case .r2160p: "4K"
-        case .safeArea: "安全区域"
-        case .fullScreen: "全屏"
+        case .safeArea: String(localized: "Safe Area")
+        case .fullScreen: String(localized: "Full Screen")
         }
     }
 
@@ -278,7 +278,7 @@ nonisolated enum VideoCodecPreference: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .auto: "自动"
+        case .auto: String(localized: "Automatic")
         case .h264: "H.264"
         case .hevc: "HEVC (H.265)"
         case .av1: "AV1"
@@ -335,8 +335,8 @@ nonisolated enum StreamColorRange: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .limited: "有限"
-        case .full: "完整"
+        case .limited: String(localized: "Limited")
+        case .full: String(localized: "Full")
         }
     }
 }
@@ -350,9 +350,9 @@ nonisolated enum StreamAudioConfiguration: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .stereo: "立体声"
-        case .surround51: "5.1 环绕声"
-        case .surround71: "7.1 环绕声"
+        case .stereo: String(localized: "Stereo")
+        case .surround51: String(localized: "5.1 Surround")
+        case .surround71: String(localized: "7.1 Surround")
         }
     }
 

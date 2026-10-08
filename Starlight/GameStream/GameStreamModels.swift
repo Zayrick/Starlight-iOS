@@ -17,15 +17,17 @@ nonisolated enum GameStreamError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidAddress:
-            "地址格式无效"
+            String(localized: "The address isn't valid.")
         case .unreachable(let message):
-            "无法连接到主机：\(message)"
+            String(localized: "Couldn't connect to the host: \(message)")
+        case .server(0, let message):
+            message
         case .server(let code, let message):
-            "主机返回错误 \(code)：\(message)"
+            String(localized: "The host returned error \(code): \(message)")
         case .malformedResponse:
-            "主机返回了无法解析的数据"
+            String(localized: "The host sent a response that couldn't be read.")
         case .notPaired:
-            "尚未与此主机配对"
+            String(localized: "Not paired with this host.")
         case .pairing(let message):
             message
         case .crypto(let message):
@@ -125,7 +127,7 @@ nonisolated struct ServerInfo: Sendable {
             throw GameStreamError.malformedResponse
         }
         self.uuid = uuid
-        name = xml.text("hostname") ?? "未知主机"
+        name = xml.text("hostname") ?? String(localized: "Unknown Host")
         let mac = xml.text("mac")
         macAddress = mac == "00:00:00:00:00:00" ? nil : mac
         appVersion = xml.text("appversion")

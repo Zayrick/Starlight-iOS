@@ -53,7 +53,7 @@ nonisolated enum GameStreamCrypto {
             }
         }
         guard status == kCCSuccess else {
-            throw GameStreamError.crypto("AES 运算失败 (\(status))")
+            throw GameStreamError.crypto(String(localized: "AES operation failed (\(status))."))
         }
         return output.prefix(outputLength)
     }

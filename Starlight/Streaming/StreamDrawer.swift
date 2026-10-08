@@ -24,13 +24,13 @@ struct StreamDrawer: View {
                     header
 
                     HStack(spacing: 10) {
-                        Toggle("串流信息", systemImage: "chart.bar.xaxis", isOn: $session.showsStatistics)
-                        Toggle("触控", systemImage: "hand.point.up.left", isOn: $session.touchEnabled)
+                        Toggle("Stream Stats", systemImage: "chart.bar.xaxis", isOn: $session.showsStatistics)
+                        Toggle("Touch", systemImage: "hand.point.up.left", isOn: $session.touchEnabled)
                     }
                     .toggleStyle(TileToggleStyle())
 
-                    section("触控模式") {
-                        Picker("触控模式", selection: $session.touchMode) {
+                    section("Touch Mode") {
+                        Picker("Touch Mode", selection: $session.touchMode) {
                             ForEach(TouchMode.allCases) { mode in
                                 Text(mode.title).tag(mode)
                             }
@@ -40,8 +40,8 @@ struct StreamDrawer: View {
                         .disabled(!session.touchEnabled)
                     }
 
-                    section("鼠标模式") {
-                        Picker("鼠标模式", selection: $session.mouseMode) {
+                    section("Mouse Mode") {
+                        Picker("Mouse Mode", selection: $session.mouseMode) {
                             ForEach(MouseMode.allCases) { mode in
                                 Text(mode.title).tag(mode)
                             }
@@ -50,7 +50,7 @@ struct StreamDrawer: View {
                         .labelsHidden()
                     }
 
-                    section("快捷键") {
+                    section("Shortcuts") {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                             ForEach(Shortcut.all) { shortcut in
                                 Button {
@@ -79,7 +79,7 @@ struct StreamDrawer: View {
                 Button {
                     streamController.close()
                 } label: {
-                    Label("断开连接", systemImage: "xmark")
+                    Label("Disconnect", systemImage: "xmark")
                         .frame(maxWidth: .infinity)
                 }
                 .tint(.white)
@@ -87,7 +87,7 @@ struct StreamDrawer: View {
                 Button(role: .destructive) {
                     streamController.close(quitApp: true)
                 } label: {
-                    Label("退出应用", systemImage: "power")
+                    Label("Quit App", systemImage: "power")
                         .frame(maxWidth: .infinity)
                 }
                 .tint(.red)
@@ -123,7 +123,7 @@ struct StreamDrawer: View {
         .lineLimit(1)
     }
 
-    private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+    private func section(_ title: LocalizedStringKey, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.footnote.weight(.semibold))
@@ -150,9 +150,9 @@ private struct Shortcut: Identifiable {
         Shortcut(title: "Esc", keys: [escape]),
         Shortcut(title: "Win", keys: [.leftMeta]),
         Shortcut(title: "Alt+Tab", keys: [.leftAlt, tab]),
-        Shortcut(title: "显示桌面", keys: [.leftMeta, d]),
-        Shortcut(title: "全屏切换", keys: [.leftAlt, enter]),
-        Shortcut(title: "任务管理器", keys: [.leftControl, .leftShift, escape]),
+        Shortcut(title: String(localized: "Show Desktop"), keys: [.leftMeta, d]),
+        Shortcut(title: String(localized: "Toggle Full Screen"), keys: [.leftAlt, enter]),
+        Shortcut(title: String(localized: "Task Manager"), keys: [.leftControl, .leftShift, escape]),
     ]
 }
 

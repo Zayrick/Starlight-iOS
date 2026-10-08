@@ -48,15 +48,15 @@ nonisolated struct PairingSession {
             ],
             timeout: 600,
             failure: isServerBusy
-                ? "主机上仍有串流会话在运行，请先结束后再配对。"
-                : "主机拒绝了配对请求。"
+                ? String(localized: "A stream is still running on the host. End it before pairing.")
+                : String(localized: "The host declined the pairing request.")
         )
 
         guard let plainCert = getCertResponse.text("plaincert"), !plainCert.isEmpty,
               let certPEM = Data(hexString: plainCert).flatMap({ String(data: $0, encoding: .utf8) }),
               let serverCertificate = GameStreamCrypto.der(fromPEM: certPEM),
               let serverSignature = GameStreamCrypto.certificateSignature(serverCertificate) else {
-            throw GameStreamError.pairing("主机上已有另一个配对请求正在进行。")
+            throw GameStreamError.pairing(String(localized: "Another pairing request is already in progress on the host."))
         }
 
         let aesKey = GameStreamCrypto.hash(salt + Data(pin.utf8), useSHA256: useSHA256).prefix(16)
@@ -68,7 +68,7 @@ nonisolated struct PairingSession {
                 name: "clientchallenge",
                 value: try GameStreamCrypto.aesEncrypt(randomChallenge, key: aesKey).hexString
             )],
-            failure: "配对第 2 步失败。"
+            failure: Self.stepFailure(2)
         )
 
         guard let encryptedServerResponse = challengeResponse.text("challengeresponse").flatMap(Data.init(hexString:)) else {
@@ -93,7 +93,7 @@ nonisolated struct PairingSession {
                 name: "serverchallengeresp",
                 value: try GameStreamCrypto.aesEncrypt(challengeResponseHash, key: aesKey).hexString
             )],
-            failure: "配对第 3 步失败。"
+            failure: Self.stepFailure(3)
         )
 
         guard let pairingSecret = secretResponse.text("pairingsecret").flatMap(Data.init(hexString:)),
@@ -108,7 +108,7 @@ nonisolated struct PairingSession {
             signature: Data(serverSecretSignature),
             certificateDER: serverCertificate
         ) else {
-            throw GameStreamError.pairing("主机证书校验失败，可能遭到中间人攻击。")
+            throw GameStreamError.pairing(String(localized: "The host's certificate couldn't be verified. Someone may be intercepting the connection."))
         }
 
         // The server proves it knew the PIN by hashing our challenge
@@ -117,14 +117,14 @@ nonisolated struct PairingSession {
             useSHA256: useSHA256
         )
         guard expectedServerHash == serverResponseHash else {
-            throw GameStreamError.pairing("PIN 不正确，请重试。")
+            throw GameStreamError.pairing(String(localized: "Incorrect PIN. Try again."))
         }
 
         // Stage 4: send our signed secret
         let clientPairingSecret = clientSecret + (try identity.sign(clientSecret))
         _ = try await stage(
             [URLQueryItem(name: "clientpairingsecret", value: clientPairingSecret.hexString)],
-            failure: "配对第 4 步失败。"
+            failure: Self.stepFailure(4)
         )
 
         // Stage 5: confirm over HTTPS with the pinned certificate
@@ -135,10 +135,14 @@ nonisolated struct PairingSession {
             secure: true
         )
         guard finalResponse.text("paired") == "1" else {
-            throw GameStreamError.pairing("配对第 5 步失败。")
+            throw GameStreamError.pairing(Self.stepFailure(5))
         }
 
         return serverCertificate
+    }
+
+    private static func stepFailure(_ step: Int) -> String {
+        String(localized: "Pairing failed at step \(step).")
     }
 
     private func stage(
@@ -150,7 +154,7 @@ nonisolated struct PairingSession {
         do {
             response = try await client.pair(query, timeout: timeout)
         } catch GameStreamError.server(_, let message) {
-            throw GameStreamError.pairing("\(failure)（\(message)）")
+            throw GameStreamError.pairing(String(localized: "\(failure) (\(message))", comment: "A pairing failure followed by the reason the host gave"))
         }
         guard response.text("paired") == "1" else {
             throw GameStreamError.pairing(failure)

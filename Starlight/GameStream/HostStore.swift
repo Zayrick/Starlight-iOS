@@ -187,7 +187,7 @@ final class HostStore {
         pairing = Pairing(hostID: hostID, pin: pin)
 
         guard let address = host.displayAddress else {
-            pairing?.errorMessage = "没有可用的主机地址。"
+            pairing?.errorMessage = String(localized: "No host address is available.")
             return
         }
 
@@ -198,7 +198,7 @@ final class HostStore {
                 let client = GameStreamClient(address: address, httpsPort: host.httpsPort)
                 let info = try await client.serverInfo()
                 guard info.uuid == hostID else {
-                    throw GameStreamError.pairing("该地址上的主机已发生变化。")
+                    throw GameStreamError.pairing(String(localized: "The host at this address has changed."))
                 }
 
                 let certificate = try await PairingSession(
@@ -270,7 +270,7 @@ final class HostStore {
     /// Quits the app running on a host.
     func quitApp(hostID: String) async throws {
         guard let host = host(id: hostID), let address = host.displayAddress else {
-            throw GameStreamError.unreachable("没有可用的主机地址")
+            throw GameStreamError.unreachable(String(localized: "No host address is available."))
         }
         try await host.client(at: address).quitApp()
         update(hostID) { $0.currentGameID = nil }

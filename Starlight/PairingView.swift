@@ -21,7 +21,7 @@ private struct PairingView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(.orange)
 
-                Text("配对失败")
+                Text("Pairing Failed")
                     .font(.title2.weight(.semibold))
 
                 Text(errorMessage)
@@ -29,16 +29,16 @@ private struct PairingView: View {
                     .foregroundStyle(.secondary)
 
                 HStack {
-                    Button("取消", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         hostStore.cancelPairing()
                     }
-                    Button("重试") {
+                    Button("Try Again") {
                         hostStore.startPairing(hostID: pairing.hostID)
                     }
                     .prominentButtonStyle()
                 }
             } else {
-                Text("与“\(hostName)”配对")
+                Text("Pair with “\(hostName)”")
                     .font(.title2.weight(.semibold))
 
                 Text(pairing.pin)
@@ -46,15 +46,15 @@ private struct PairingView: View {
                     .monospacedDigit()
                     .tracking(12)
                     .textSelection(.enabled)
-                    .accessibilityLabel("配对码 \(pairing.pin.map(String.init).joined(separator: " "))")
+                    .accessibilityLabel("Pairing code \(pairing.pin.map(String.init).joined(separator: " "))")
 
-                Text("请在主机上打开 Sunshine 网页管理界面的 PIN 页面，输入上方的配对码。")
+                Text("On the host, open the PIN page in the Sunshine web UI and enter the code above.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
 
                 ProgressView()
 
-                Button("取消", role: .cancel) {
+                Button("Cancel", role: .cancel) {
                     hostStore.cancelPairing()
                 }
             }

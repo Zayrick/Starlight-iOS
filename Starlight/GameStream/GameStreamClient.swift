@@ -116,7 +116,9 @@ nonisolated struct GameStreamClient: Sendable {
             ? xml.text("resume").map { $0 != "0" } ?? false
             : xml.text("gamesession").map { $0 != "0" } ?? false
         guard succeeded else {
-            throw GameStreamError.server(code: 0, message: resume ? "无法恢复应用" : "无法启动应用")
+            throw GameStreamError.server(code: 0, message: resume
+                ? String(localized: "Couldn't resume the app.")
+                : String(localized: "Couldn't open the app."))
         }
         return xml.text("sessionUrl0").flatMap { $0.isEmpty ? nil : $0 }
     }
@@ -126,7 +128,7 @@ nonisolated struct GameStreamClient: Sendable {
         let xml = try await request(secure: true, "/cancel", timeout: 30)
         // GFE reports success but keeps running apps started by another client
         if xml.text("cancel") == "0" {
-            throw GameStreamError.server(code: 0, message: "主机拒绝退出应用")
+            throw GameStreamError.server(code: 0, message: String(localized: "The host refused to quit the app."))
         }
     }
 
@@ -159,7 +161,7 @@ nonisolated struct GameStreamClient: Sendable {
         guard code == 200 else {
             throw GameStreamError.server(
                 code: code,
-                message: root.attributes["status_message"] ?? "未知错误"
+                message: root.attributes["status_message"] ?? String(localized: "Unknown error.")
             )
         }
         return root

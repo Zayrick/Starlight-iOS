@@ -55,7 +55,7 @@ struct StreamView: View {
                 .padding(2)
 
                 // Brings up the keyboard, or puts it away, once let go
-                StreamEdgeHandle(edge: .trailing, isDashed: true, followsPull: true, title: "键盘", onRelease: { distance, _ in
+                StreamEdgeHandle(edge: .trailing, isDashed: true, followsPull: true, title: String(localized: "Keyboard"), onRelease: { distance, _ in
                     if distance > 0 {
                         isTyping.toggle()
                     }
@@ -87,7 +87,7 @@ struct StreamView: View {
         // Clear of the edge handle and the menu button
         .overlay(alignment: .top) {
             if session.phase == .streaming, session.isConnectionPoor {
-                Label("网络状况不佳", systemImage: "wifi.exclamationmark")
+                Label("Poor Connection", systemImage: "wifi.exclamationmark")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.yellow)
                     .padding(.horizontal, 12)
@@ -219,11 +219,11 @@ struct StreamView: View {
 
         case .failed(let message):
             ContentUnavailableView {
-                Label("串流失败", systemImage: "exclamationmark.triangle")
+                Label("Stream Failed", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(message)
             } actions: {
-                Button("关闭") {
+                Button("Close") {
                     streamController.close()
                 }
                 .prominentButtonStyle()
@@ -280,12 +280,12 @@ struct StreamView: View {
     private var controlsMenu: some View {
         Menu {
             Section {
-                Toggle("串流信息", systemImage: "chart.bar.xaxis", isOn: $session.showsStatistics)
+                Toggle("Stream Stats", systemImage: "chart.bar.xaxis", isOn: $session.showsStatistics)
             }
 
 #if os(macOS)
             Section {
-                Picker("鼠标模式", systemImage: "cursorarrow", selection: $session.mouseMode) {
+                Picker("Mouse Mode", systemImage: "cursorarrow", selection: $session.mouseMode) {
                     ForEach(MouseMode.allCases) { mode in
                         Text(mode.title).tag(mode)
                     }
@@ -294,15 +294,15 @@ struct StreamView: View {
             }
 #endif
 
-            Button("断开连接", systemImage: "xmark") {
+            Button("Disconnect", systemImage: "xmark") {
                 streamController.close()
             }
 
-            Button("退出应用", systemImage: "power", role: .destructive) {
+            Button("Quit App", systemImage: "power", role: .destructive) {
                 streamController.close(quitApp: true)
             }
         } label: {
-            Label("串流选项", systemImage: "xmark")
+            Label("Stream Options", systemImage: "xmark")
                 .labelStyle(.iconOnly)
                 .font(.body.weight(.semibold))
                 .frame(width: 36, height: 36)

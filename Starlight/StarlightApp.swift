@@ -23,7 +23,7 @@ struct StarlightApp: App {
 #endif
 
 #if os(macOS) || os(visionOS)
-        WindowGroup("串流", id: StreamWindow.id) {
+        WindowGroup("Stream", id: StreamWindow.id) {
             StreamWindow()
                 .environment(streamController)
         }

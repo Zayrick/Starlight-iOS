@@ -29,32 +29,32 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker("分辨率", selection: $resolution) {
+                Picker("Resolution", selection: $resolution) {
                     ForEach(StreamResolution.availableCases) { resolution in
                         Text(resolution.title).tag(resolution)
                     }
                 }
 
-                Picker("帧率", selection: $frameRate) {
+                Picker("Frame Rate", selection: $frameRate) {
                     ForEach(StreamSettings.frameRates, id: \.self) { fps in
                         Text("\(fps) FPS").tag(fps)
                     }
                 }
 
                 VStack(alignment: .leading) {
-                    LabeledContent("码率", value: Self.formatMbps(bitrateKbps))
+                    LabeledContent("Bitrate", value: Self.formatMbps(bitrateKbps))
                     Slider(value: bitrateMbps, in: bitrateMbpsRange, step: 0.5)
                 }
 
-                Toggle("优化游戏设置", isOn: $optimizeGameSettings)
+                Toggle("Optimize Game Settings", isOn: $optimizeGameSettings)
             } header: {
-                Text("视频")
+                Text("Video")
             } footer: {
-                Text("推荐码率 \(Self.formatMbps(recommendedBitrateKbps))，更改分辨率或帧率时会自动重设。\n优化游戏设置允许主机调整游戏的画面设置以匹配串流。")
+                Text("Recommended bitrate: \(Self.formatMbps(recommendedBitrateKbps)). It resets when you change the resolution or frame rate.\nOptimize Game Settings lets the host adjust the game's graphics settings to match the stream.")
             }
 
             Section {
-                Picker("编码偏好", selection: $codec) {
+                Picker("Codec", selection: $codec) {
                     ForEach(VideoCodecPreference.allCases) { codec in
                         Text(codec.title).tag(codec)
                     }
@@ -66,37 +66,37 @@ struct SettingsView: View {
                 Toggle("YUV 4:4:4", isOn: $yuv444Enabled)
                     .disabled(!codec.supportsYUV444)
 
-                Picker("色彩范围", selection: $colorRange) {
+                Picker("Color Range", selection: $colorRange) {
                     ForEach(StreamColorRange.allCases) { range in
                         Text(range.title).tag(range)
                     }
                 }
             } header: {
-                Text("画质")
+                Text("Quality")
             } footer: {
                 Text(qualityFooter)
             }
 
             Section {
-                Picker("声道", selection: $audio) {
+                Picker("Channels", selection: $audio) {
                     ForEach(StreamAudioConfiguration.allCases) { audio in
                         Text(audio.title).tag(audio)
                     }
                 }
 
-                Toggle("在主机上同时播放音频", isOn: $playAudioOnHost)
+                Toggle("Play Audio on Host", isOn: $playAudioOnHost)
             } header: {
-                Text("音频")
+                Text("Audio")
             } footer: {
-                Text("开启后主机的扬声器也会继续出声。")
+                Text("The host's speakers keep playing along with the stream.")
             }
 
 #if !os(visionOS)
             Section {
 #if os(iOS)
-                Toggle("触控", isOn: $touchEnabled)
+                Toggle("Touch", isOn: $touchEnabled)
 
-                Picker("触控模式", selection: $touchMode) {
+                Picker("Touch Mode", selection: $touchMode) {
                     ForEach(TouchMode.allCases) { mode in
                         Text(mode.title).tag(mode)
                     }
@@ -104,42 +104,42 @@ struct SettingsView: View {
                 .disabled(!touchEnabled)
 #endif
 
-                Picker("鼠标模式", selection: $mouseMode) {
+                Picker("Mouse Mode", selection: $mouseMode) {
                     ForEach(MouseMode.allCases) { mode in
                         Text(mode.title).tag(mode)
                     }
                 }
             } header: {
-                Text("输入")
+                Text("Input")
             } footer: {
                 Text(inputFooter)
             }
 #endif
 
             Section {
-                Picker("模拟手柄", selection: $gamepadEmulation) {
+                Picker("Emulated Controller", selection: $gamepadEmulation) {
                     ForEach(GamepadEmulation.allCases) { emulation in
                         Text(emulation.title).tag(emulation)
                     }
                 }
 
-                Toggle("交换 A/B 与 X/Y", isOn: $gamepadSwapsButtons)
+                Toggle("Swap A/B and X/Y", isOn: $gamepadSwapsButtons)
 
-                Toggle("震动与扳机反馈", isOn: $gamepadFeedback)
+                Toggle("Rumble and Trigger Feedback", isOn: $gamepadFeedback)
 
 #if os(iOS)
                 if UIDevice.current.userInterfaceIdiom == .phone {
-                    Toggle("用本机代替震动与体感", isOn: $gamepadUsesDevice)
+                    Toggle("Use iPhone for Rumble and Motion", isOn: $gamepadUsesDevice)
                 }
 #endif
             } header: {
-                Text("手柄")
+                Text("Controller")
             } footer: {
                 Text(gamepadFooter)
             }
 
             Section {
-                NavigationLink("关于 Starlight") {
+                NavigationLink("About Starlight") {
                     AboutView()
                 }
             }
@@ -155,7 +155,7 @@ struct SettingsView: View {
                 yuv444Enabled = false
             }
         }
-        .navigationTitle("设置")
+        .navigationTitle("Settings")
         .toolbar(removing: .title)
     }
 
@@ -179,12 +179,14 @@ struct SettingsView: View {
     private var qualityFooter: String {
         var notes: [String] = []
         if !codec.isHardwareDecodeSupported {
-            notes.append("此设备不支持 \(codec.title) 硬件解码，串流时将回退到其他编码。")
+            notes.append(String(localized: "This device can't hardware-decode \(codec.title), so another codec will be used."))
         }
-        notes.append(codec.supportsHDR ? "HDR 需要主机和显示器同时支持。" : "H.264 不支持 HDR。")
+        notes.append(codec.supportsHDR
+            ? String(localized: "HDR requires support from both the host and the display.")
+            : String(localized: "H.264 doesn't support HDR."))
         notes.append(codec.supportsYUV444
-            ? "YUV 4:4:4 使用 HEVC 编码，文字更清晰但需要更高码率，主机不支持时会回退到 4:2:0。"
-            : "YUV 4:4:4 仅支持 HEVC 编码。")
+            ? String(localized: "YUV 4:4:4 uses HEVC for sharper text but needs a higher bitrate. It falls back to 4:2:0 if the host doesn't support it.")
+            : String(localized: "YUV 4:4:4 requires HEVC."))
         return notes.joined(separator: "\n")
     }
 
@@ -194,28 +196,28 @@ struct SettingsView: View {
         if touchEnabled {
             switch touchMode {
             case .multiTouch:
-                notes.append("多点触控会把触摸原样发送到主机，需要 Sunshine 主机。")
+                notes.append(String(localized: "Multi-Touch sends touches to the host as they are. Requires a Sunshine host."))
             case .trackpad:
-                notes.append("触控板用单指移动光标，轻点为左键，轻点两下并按住可拖移。")
+                notes.append(String(localized: "In Trackpad mode, slide one finger to move the pointer, tap to click, and double-tap and hold to drag."))
             case .directTap:
-                notes.append("直接点按会把光标移到手指处，轻点为左键，按住拖动可拖移，长按为右键。")
+                notes.append(String(localized: "In Direct Tap mode, the pointer goes where your finger lands. Tap to click, touch and drag to drag, and touch and hold to right-click."))
             }
             if touchMode != .multiTouch {
-                notes.append("双指滑动滚动，双指轻点为右键，三指轻点为中键。")
+                notes.append(String(localized: "Swipe with two fingers to scroll, tap with two fingers to right-click, and tap with three fingers to middle-click."))
             }
         }
 #endif
         switch mouseMode {
         case .remoteCursor:
 #if os(macOS)
-            notes.append("远程光标会捕获鼠标，适合用鼠标转动视角的游戏。按 ⌃⌥⇧Z 释放或重新捕获鼠标。")
+            notes.append(String(localized: "Remote Cursor captures the mouse, which suits games that use it to look around. Press ⌃⌥⇧Z to release or recapture it."))
 #else
-            notes.append("远程光标会锁定指针，适合用鼠标转动视角的游戏。")
+            notes.append(String(localized: "Remote Cursor locks the pointer, which suits games that use the mouse to look around."))
 #endif
         case .localCursor:
-            notes.append("本地光标保持指针可见并直接定位，适合远程桌面，但部分游戏不支持。")
+            notes.append(String(localized: "Local Cursor keeps the pointer visible and moves it directly, which suits remote desktop use. Some games don't support it."))
         }
-        notes.append("键盘上的 Command 键保留给本机快捷键，不会发送到主机。")
+        notes.append(String(localized: "The Command key is kept for shortcuts on this device and isn't sent to the host."))
         return notes.joined(separator: "\n")
     }
 
@@ -223,21 +225,21 @@ struct SettingsView: View {
         var notes: [String] = []
         switch gamepadEmulation {
         case .automatic:
-            notes.append("主机会模拟与手柄相同类型的手柄，无法识别时由主机决定。")
+            notes.append(String(localized: "The host emulates the same kind of controller you're using, or picks one itself if it can't tell."))
         case .xbox:
-            notes.append("主机会模拟 Xbox 手柄，兼容的游戏最多。")
+            notes.append(String(localized: "The host emulates an Xbox controller, which works with the most games."))
         case .playStation:
-            notes.append("主机会模拟 PlayStation 手柄，游戏可以使用体感和触摸板。")
+            notes.append(String(localized: "The host emulates a PlayStation controller, so games can use motion and the touchpad."))
         }
         if gamepadSwapsButtons {
-            notes.append("按任天堂的布局，按 A 相当于主机上的 B，按 X 相当于主机上的 Y。")
+            notes.append(String(localized: "Uses Nintendo's layout: A acts as B on the host, and X acts as Y."))
         }
 #if os(iOS)
         if UIDevice.current.userInterfaceIdiom == .phone, gamepadUsesDevice {
-            notes.append("适合 Backbone、Kishi 等夹住手机的手柄：第一个手柄没有马达或体感时，由手机震动和感应动作。")
+            notes.append(String(localized: "For controllers your iPhone clips into, like Backbone or Kishi: if the first controller has no rumble motors or motion sensors, your iPhone fills in."))
         }
 #endif
-        notes.append("手柄设置在下次串流时生效。")
+        notes.append(String(localized: "Controller settings take effect the next time you stream."))
         return notes.joined(separator: "\n")
     }
 

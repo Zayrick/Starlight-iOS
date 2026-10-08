@@ -19,7 +19,7 @@ struct StreamEdgeHandle: UIViewRepresentable {
     /// Whether the accent itself moves a short way after a pull.
     var followsPull = false
     /// What VoiceOver reads out, when there's something to activate.
-    var title = "串流选项"
+    var title = String(localized: "Stream Options")
     /// How far the handle is pulled away from its edge, as the finger moves.
     var onPull: ((CGFloat) -> Void)?
     /// How far the handle was pulled when let go, and how fast the finger

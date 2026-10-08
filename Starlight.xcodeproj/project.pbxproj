@@ -211,6 +211,9 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				"zh-Hant",
+				"zh-HK",
 			);
 			mainGroup = F71DE22D30024E9000576CC6;
 			minimizedProjectReferenceProxies = 1;
@@ -421,7 +424,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Starlight/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight 需要访问本地网络以发现并连接你的串流主机。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight uses the local network to find and connect to your streaming hosts.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -467,7 +470,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Starlight/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight 需要访问本地网络以发现并连接你的串流主机。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Starlight uses the local network to find and connect to your streaming hosts.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

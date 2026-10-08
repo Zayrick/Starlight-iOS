@@ -22,7 +22,7 @@ struct AddDeviceView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("IP 地址或主机名", text: $address)
+                    TextField("IP Address or Hostname", text: $address)
                         .focused($isAddressFocused)
                         .autocorrectionDisabled()
 #if os(iOS) || os(visionOS)
@@ -32,7 +32,7 @@ struct AddDeviceView: View {
                         .onSubmit(add)
                         .disabled(isAdding)
                 } footer: {
-                    Text("例如 192.168.1.10 或 192.168.1.10:47989。主机需要运行 Sunshine 或 GeForce Experience。")
+                    Text("For example, 192.168.1.10 or 192.168.1.10:47989. The host needs to be running Sunshine or GeForce Experience.")
                 }
 
                 if let errorMessage {
@@ -43,13 +43,13 @@ struct AddDeviceView: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("添加设备")
+            .navigationTitle("Add Device")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }
@@ -59,7 +59,7 @@ struct AddDeviceView: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        Button("添加", action: add)
+                        Button("Add", action: add)
                             .disabled(trimmedAddress.isEmpty)
                     }
                 }

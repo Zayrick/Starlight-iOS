@@ -36,7 +36,7 @@ struct DeviceDetailView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             } else {
-                                Button("刷新", systemImage: "arrow.clockwise") {
+                                Button("Refresh", systemImage: "arrow.clockwise") {
                                     Task { await hostStore.refreshApps(hostID: hostID) }
                                 }
                                 .disabled(!host.isPaired)
@@ -44,7 +44,7 @@ struct DeviceDetailView: View {
                         }
                     }
             } else {
-                ContentUnavailableView("设备已删除", systemImage: "desktopcomputer.trianglebadge.exclamationmark")
+                ContentUnavailableView("Device Removed", systemImage: "desktopcomputer.trianglebadge.exclamationmark")
             }
         }
 #if os(iOS)
@@ -108,14 +108,14 @@ struct DeviceDetailView: View {
                 titleVisibility: .visible,
                 presenting: pendingLaunch
             ) { app in
-                Button("退出并启动 \(app.name)", role: .destructive) {
+                Button("Quit and Open \(app.name)", role: .destructive) {
                     streamController.start(host: host, app: app, quitsRunningApp: true)
                 }
             } message: { _ in
-                Text("主机同一时间只能运行一个应用，未保存的进度将会丢失。")
+                Text("The host can only run one app at a time. Any unsaved progress will be lost.")
             }
             .alert(
-                "无法退出应用",
+                "Couldn't Quit App",
                 isPresented: Binding {
                     quitErrorMessage != nil
                 } set: { isPresented in
@@ -124,20 +124,20 @@ struct DeviceDetailView: View {
                     }
                 }
             ) {
-                Button("好") {}
+                Button("OK") {}
             } message: {
                 Text(quitErrorMessage ?? "")
             }
             .alert(
-                "退出“\(runningApp?.name ?? "应用")”？",
+                quitTitle(for: runningApp),
                 isPresented: $isConfirmingQuit
             ) {
-                Button("取消", role: .cancel) {}
-                Button("退出", role: .destructive) {
+                Button("Cancel", role: .cancel) {}
+                Button("Quit", role: .destructive) {
                     quitRunningApp(on: host)
                 }
             } message: {
-                Text("未保存的进度将会丢失。")
+                Text("Any unsaved progress will be lost.")
             }
         } else {
             pairPrompt(for: host)
@@ -175,12 +175,17 @@ struct DeviceDetailView: View {
     private func runningApp(for host: StreamHost) -> StreamApp? {
         guard let runningID = host.currentGameID else { return nil }
         return host.apps.first { $0.id == runningID }
-            ?? StreamApp(id: runningID, name: "未知应用", isHDRSupported: false)
+            ?? StreamApp(id: runningID, name: String(localized: "Unknown App"), isHDRSupported: false)
     }
 
     private func runningAppTitle(for host: StreamHost) -> String {
-        let name = host.apps.first { $0.id == host.currentGameID }?.name ?? "其他应用"
-        return "“\(name)”正在运行"
+        let name = host.apps.first { $0.id == host.currentGameID }?.name ?? String(localized: "Another App")
+        return String(localized: "“\(name)” Is Running")
+    }
+
+    private func quitTitle(for app: StreamApp?) -> String {
+        guard let app else { return String(localized: "Quit App?") }
+        return String(localized: "Quit “\(app.name)”?")
     }
 
     private func quitRunningApp(on host: StreamHost) {
@@ -203,15 +208,15 @@ struct DeviceDetailView: View {
             ProgressView()
         case .failed(let message):
             ContentUnavailableView(
-                "无法获取应用列表",
+                "Couldn't Load Apps",
                 systemImage: "exclamationmark.triangle",
                 description: Text(message)
             )
         case nil:
             ContentUnavailableView(
-                "暂无应用",
+                "No Apps",
                 systemImage: "square.grid.2x2",
-                description: Text("主机上还没有配置可串流的应用。")
+                description: Text("No streamable apps are set up on the host yet.")
             )
         }
     }
@@ -219,13 +224,15 @@ struct DeviceDetailView: View {
     /// Fallback for hosts that were unpaired on the server side after being opened.
     private func pairPrompt(for host: StreamHost) -> some View {
         ContentUnavailableView {
-            Label("尚未配对", systemImage: "lock.fill")
+            Label("Not Paired", systemImage: "lock.fill")
         } description: {
-            Text(host.isOnline
-                 ? "配对后即可查看这台主机上的应用。"
-                 : "主机当前离线，请确认主机已开机并与本设备处于同一网络。")
+            if host.isOnline {
+                Text("Pair to see the apps on this host.")
+            } else {
+                Text("The host is offline. Make sure it's turned on and on the same network as this device.")
+            }
         } actions: {
-            Button("开始配对") {
+            Button("Start Pairing") {
                 hostStore.startPairing(hostID: host.id)
             }
             .prominentButtonStyle()
@@ -280,7 +287,7 @@ private struct RunningAppCard: View {
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("继续", systemImage: "play.fill", action: resume)
+            Button("Resume", systemImage: "play.fill", action: resume)
                 .prominentButtonStyle()
 
             Button(role: .destructive, action: quit) {
@@ -288,7 +295,7 @@ private struct RunningAppCard: View {
                     ProgressView()
                         .controlSize(.small)
                 } else {
-                    Label("退出", systemImage: "power")
+                    Label("Quit", systemImage: "power")
                 }
             }
             .labelStyle(.iconOnly)

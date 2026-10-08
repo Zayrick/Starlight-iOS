@@ -55,11 +55,11 @@ struct DevicesView: View {
             if visibleHosts.isEmpty {
                 if searchText.isEmpty {
                     ContentUnavailableView {
-                        Label("正在搜索设备", systemImage: "antenna.radiowaves.left.and.right")
+                        Label("Searching for Devices", systemImage: "antenna.radiowaves.left.and.right")
                     } description: {
-                        Text("正在局域网中查找运行 Sunshine 的主机，也可以手动添加主机地址。")
+                        Text("Looking for Sunshine hosts on your local network. You can also add a host by its address.")
                     } actions: {
-                        Button("添加设备") {
+                        Button("Add Device") {
                             isAddingDevice = true
                         }
                     }
@@ -69,7 +69,7 @@ struct DevicesView: View {
             }
         }
         .contentMargins(20, for: .scrollContent)
-        .navigationTitle("设备")
+        .navigationTitle("Devices")
         .navigationDestination(item: $selectedHostID) { hostID in
             DeviceDetailView(hostID: hostID)
         }
@@ -79,7 +79,7 @@ struct DevicesView: View {
             ToolbarSpacer(.flexible)
 #endif
             ToolbarItem(placement: .primaryAction) {
-                Button("添加", systemImage: "plus") {
+                Button("Add", systemImage: "plus") {
                     isAddingDevice = true
                 }
             }
@@ -105,7 +105,7 @@ struct DevicesView: View {
             ),
             presenting: unavailableHost
         ) { _ in
-            Button("好", role: .cancel) {}
+            Button("OK", role: .cancel) {}
         } message: { host in
             Text(host.message)
         }
@@ -130,13 +130,13 @@ private struct UnavailableHost {
     let isOffline: Bool
 
     var title: String {
-        isOffline ? "设备离线" : "正在连接"
+        isOffline ? String(localized: "Device Offline") : String(localized: "Connecting")
     }
 
     var message: String {
         isOffline
-            ? "无法连接到“\(name)”，请确认主机已开机并与本设备处于同一网络。"
-            : "正在与“\(name)”建立连接，请稍候再试。"
+            ? String(localized: "Couldn't connect to “\(name)”. Make sure the host is turned on and on the same network as this device.")
+            : String(localized: "Still connecting to “\(name)”. Try again in a moment.")
     }
 }
 
@@ -170,7 +170,7 @@ private struct DeviceCard: View {
             .animation(.smooth(duration: 0.8), value: isHovered)
             .contextMenu {
                 Toggle(isOn: $isFavorite) {
-                    Label("收藏", systemImage: "star")
+                    Label("Favorite", systemImage: "star")
                 }
 
                 Divider()
@@ -178,7 +178,7 @@ private struct DeviceCard: View {
                 Button(role: .destructive) {
                     hostStore.removeHost(id: host.id)
                 } label: {
-                    Label("删除设备", systemImage: "trash")
+                    Label("Remove Device", systemImage: "trash")
                 }
             }
             .task(id: host.isOnline && host.isPaired) {
@@ -293,7 +293,7 @@ private struct DeviceCard: View {
                 isFavorite.toggle()
             } label: {
                 Label(
-                    isFavorite ? "取消收藏" : "收藏",
+                    isFavorite ? "Unfavorite" : "Favorite",
                     systemImage: isFavorite ? "star.fill" : "star"
                 )
                 .labelStyle(.iconOnly)
@@ -303,17 +303,17 @@ private struct DeviceCard: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .circle)
             .foregroundStyle(isFavorite ? .yellow : .primary)
-            .help(isFavorite ? "取消收藏" : "收藏")
+            .help(isFavorite ? "Unfavorite" : "Favorite")
 
             Button {} label: {
-                Label("更多", systemImage: "ellipsis")
+                Label("More", systemImage: "ellipsis")
                     .labelStyle(.iconOnly)
                     .frame(width: 30, height: 30)
                     .contentShape(.circle)
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .circle)
-            .help("更多")
+            .help("More")
         }
     }
 #endif
@@ -428,29 +428,29 @@ private struct PhotoWallTile: View {
 extension StreamHost {
     var statusText: String {
         switch status {
-        case .unknown: "正在连接"
-        case .online where pairState == .unknown: "正在连接"
-        case .online: currentGameID == nil ? "在线" : "串流中"
-        case .offline: "离线"
+        case .unknown: String(localized: "Connecting")
+        case .online where pairState == .unknown: String(localized: "Connecting")
+        case .online: currentGameID == nil ? String(localized: "Online") : String(localized: "Streaming")
+        case .offline: String(localized: "Offline")
         }
     }
 
     var pairText: String? {
         switch pairState {
-        case .paired: "已配对"
-        case .unpaired: "未配对"
+        case .paired: String(localized: "Paired")
+        case .unpaired: String(localized: "Unpaired")
         case .unknown: nil
         }
     }
 
-    /// Connection status followed by pair status, e.g. "在线 · 已配对".
+    /// Connection status followed by pair status, e.g. "Online · Paired".
     var statusLine: String {
         guard let pairText else { return statusText }
         return "\(statusText) · \(pairText)"
     }
 
     var detailText: String {
-        displayAddress?.description ?? "暂无地址"
+        displayAddress?.description ?? String(localized: "No Address")
     }
 }
 

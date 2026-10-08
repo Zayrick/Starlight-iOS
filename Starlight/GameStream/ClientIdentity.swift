@@ -47,7 +47,7 @@ nonisolated final class ClientIdentity: @unchecked Sendable {
             data as CFData,
             &error
         ) else {
-            throw GameStreamError.crypto("签名失败：\(error?.takeRetainedValue().localizedDescription ?? "")")
+            throw GameStreamError.crypto(String(localized: "Signing failed: \(error?.takeRetainedValue().localizedDescription ?? "")"))
         }
         return signature as Data
     }
@@ -160,12 +160,12 @@ nonisolated final class ClientIdentity: @unchecked Sendable {
         guard let privateKey = SecKeyCreateRandomKey(keyAttributes as CFDictionary, &error),
               let publicKey = SecKeyCopyPublicKey(privateKey),
               let publicKeyData = SecKeyCopyExternalRepresentation(publicKey, &error) as Data? else {
-            throw GameStreamError.crypto("生成密钥失败：\(error?.takeRetainedValue().localizedDescription ?? "")")
+            throw GameStreamError.crypto(String(localized: "Couldn't generate a key: \(error?.takeRetainedValue().localizedDescription ?? "")"))
         }
 
         let certificateDER = try makeCertificate(publicKey: publicKeyData, privateKey: privateKey)
         guard let certificate = SecCertificateCreateWithData(nil, certificateDER as CFData) else {
-            throw GameStreamError.crypto("生成的证书无效")
+            throw GameStreamError.crypto(String(localized: "The generated certificate isn't valid."))
         }
 
         var addQuery = baseQuery(kSecClassCertificate)
@@ -173,11 +173,11 @@ nonisolated final class ClientIdentity: @unchecked Sendable {
         addQuery[kSecAttrLabel] = certificateLabel
         let status = SecItemAdd(addQuery as CFDictionary, nil)
         guard status == errSecSuccess || status == errSecDuplicateItem else {
-            throw GameStreamError.crypto("无法保存证书到钥匙串 (\(status))")
+            throw GameStreamError.crypto(String(localized: "Couldn't save the certificate to the keychain (\(status))."))
         }
 
         guard let identity = findIdentity(matching: certificateDER) else {
-            throw GameStreamError.crypto("无法从钥匙串读取客户端身份")
+            throw GameStreamError.crypto(String(localized: "Couldn't read the client identity from the keychain."))
         }
         return ClientIdentity(
             privateKey: privateKey,
@@ -228,7 +228,7 @@ nonisolated final class ClientIdentity: @unchecked Sendable {
             tbsCertificate as CFData,
             &error
         ) as Data? else {
-            throw GameStreamError.crypto("证书签名失败：\(error?.takeRetainedValue().localizedDescription ?? "")")
+            throw GameStreamError.crypto(String(localized: "Certificate signing failed: \(error?.takeRetainedValue().localizedDescription ?? "")"))
         }
 
         return DER.sequence(tbsCertificate, sha256WithRSA, DER.bitString(signature))

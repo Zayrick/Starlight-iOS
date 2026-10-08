@@ -33,7 +33,7 @@ final class StreamSession: Identifiable {
     let videoRenderer: VideoRenderer
     @ObservationIgnored let input = StreamInput()
 
-    private(set) var phase: Phase = .starting("正在连接主机…") {
+    private(set) var phase: Phase = .starting(String(localized: "Connecting to host…")) {
         didSet {
             // Also releases whatever is held down once the stream is over
             input.isEnabled = phase == .streaming
@@ -137,13 +137,13 @@ final class StreamSession: Identifiable {
     private func launch() async {
         do {
             guard let address = host.activeAddress ?? host.displayAddress else {
-                throw GameStreamError.unreachable("没有可用的主机地址")
+                throw GameStreamError.unreachable(String(localized: "No host address is available."))
             }
             let gameStream = host.client(at: address)
 
             let info = try await gameStream.serverInfo()
             guard info.uuid == host.id else {
-                throw GameStreamError.unreachable("该地址上的主机已发生变化")
+                throw GameStreamError.unreachable(String(localized: "The host at this address has changed."))
             }
             guard info.isPaired == true else {
                 throw GameStreamError.notPaired
@@ -168,11 +168,11 @@ final class StreamSession: Identifiable {
                 if runningID == app.id {
                     resume = true
                 } else if quitsRunningApp {
-                    phase = .starting("正在退出正在运行的应用…")
+                    phase = .starting(String(localized: "Quitting the running app…"))
                     try await gameStream.quitApp()
                     resume = false
                 } else {
-                    throw GameStreamError.server(code: 0, message: "主机上正在运行其他应用")
+                    throw GameStreamError.server(code: 0, message: String(localized: "Another app is running on the host."))
                 }
             } else {
                 resume = false
@@ -183,7 +183,9 @@ final class StreamSession: Identifiable {
             key.withUnsafeMutableBytes { arc4random_buf($0.baseAddress!, 16) }
             let keyID = UInt32.random(in: 0...UInt32.max)
 
-            phase = .starting(resume ? "正在恢复 \(app.name)…" : "正在启动 \(app.name)…")
+            phase = .starting(resume
+                ? String(localized: "Resuming \(app.name)…")
+                : String(localized: "Opening \(app.name)…"))
             let sessionURL = try await gameStream.launch(
                 LaunchRequest(
                     appID: app.id,
@@ -204,7 +206,7 @@ final class StreamSession: Identifiable {
             // Stopped while the host was launching the app
             guard !isTornDown else { return }
 
-            phase = .starting("正在建立串流…")
+            phase = .starting(String(localized: "Setting up the stream…"))
             let configuration = MoonlightConfiguration(
                 address: address.host,
                 appVersion: info.appVersion ?? "7.1.431.-1",
@@ -249,7 +251,7 @@ final class StreamSession: Identifiable {
 
         if result != 0 {
             // A stage failure event usually arrives with a better message
-            fail("无法建立串流连接（错误 \(result)）")
+            fail(String(localized: "Couldn't set up the stream (error \(result))."))
         }
     }
 
@@ -259,22 +261,22 @@ final class StreamSession: Identifiable {
         switch event {
         case .stageStarting(let stage):
             if case .starting = phase {
-                phase = .starting("正在\(Self.localizedStage(stage))…")
+                phase = .starting(String(localized: "\(Self.localizedStage(stage))…", comment: "Progress while connecting; the argument is a connection stage"))
             }
 
         case .stageFailed(let stage, let errorCode, let ports):
             // Interrupting a connection the user closed fails the current stage
             if phase == .ended { return }
-            var message = "\(Self.localizedStage(stage))失败（错误 \(errorCode)）。"
+            var message = String(localized: "\(Self.localizedStage(stage)) failed (error \(errorCode)).", comment: "The argument is a connection stage")
             if let ports {
-                message += "\n请确认防火墙没有阻止这些端口：\(ports)"
+                message += "\n" + Self.firewallHint(ports: ports)
             }
             phase = .failed(message)
             teardown()
 
         case .connectionStarted:
             if case .starting = phase {
-                phase = .starting("正在等待画面…")
+                phase = .starting(String(localized: "Waiting for video…"))
             }
 
         case .connectionTerminated(let errorCode, let ports):
@@ -297,33 +299,37 @@ final class StreamSession: Identifiable {
     private static func terminationMessage(errorCode: Int, ports: String?) -> String {
         var message = switch errorCode {
         case MoonlightClient.noVideoTrafficError:
-            "没有收到主机的视频数据。"
+            String(localized: "No video was received from the host.")
         case MoonlightClient.noVideoFrameError:
-            "网络状况不佳，无法接收完整的画面。"
+            String(localized: "The network connection is too poor to receive complete frames.")
         case MoonlightClient.protectedContentError:
-            "主机上的内容受保护，无法串流。"
+            String(localized: "The content on the host is protected and can't be streamed.")
         default:
-            "连接意外中断（错误 \(errorCode)）。"
+            String(localized: "The connection was interrupted (error \(errorCode)).")
         }
         if let ports {
-            message += "\n请确认防火墙没有阻止这些端口：\(ports)"
+            message += "\n" + firewallHint(ports: ports)
         }
         return message
     }
 
+    private static func firewallHint(ports: String) -> String {
+        String(localized: "Make sure your firewall isn't blocking these ports: \(ports)")
+    }
+
     private static func localizedStage(_ stage: String) -> String {
         switch stage {
-        case "platform initialization": "初始化"
-        case "name resolution": "解析主机地址"
-        case "audio stream initialization": "初始化音频流"
-        case "RTSP handshake": "进行 RTSP 握手"
-        case "control stream initialization": "初始化控制流"
-        case "video stream initialization": "初始化视频流"
-        case "input stream initialization": "初始化输入流"
-        case "control stream establishment": "建立控制流"
-        case "video stream establishment": "建立视频流"
-        case "audio stream establishment": "建立音频流"
-        case "input stream establishment": "建立输入流"
+        case "platform initialization": String(localized: "Initialization")
+        case "name resolution": String(localized: "Host address lookup")
+        case "audio stream initialization": String(localized: "Audio stream setup")
+        case "RTSP handshake": String(localized: "RTSP handshake")
+        case "control stream initialization": String(localized: "Control stream setup")
+        case "video stream initialization": String(localized: "Video stream setup")
+        case "input stream initialization": String(localized: "Input stream setup")
+        case "control stream establishment": String(localized: "Control stream connection")
+        case "video stream establishment": String(localized: "Video stream connection")
+        case "audio stream establishment": String(localized: "Audio stream connection")
+        case "input stream establishment": String(localized: "Input stream connection")
         default: stage
         }
     }

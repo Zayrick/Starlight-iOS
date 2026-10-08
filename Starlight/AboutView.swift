@@ -20,33 +20,33 @@ struct AboutView: View {
                         .accessibilityHidden(true)
                     Text("Starlight")
                         .font(.title.bold())
-                    Text("版本 \(Self.version)")
+                    Text("Version \(Self.version)")
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
             } footer: {
-                Text("把电脑上的游戏和桌面串流到 iPhone、iPad、Mac 和 Apple Vision Pro，兼容 Sunshine 与 NVIDIA GameStream 主机。")
+                Text("Stream games and desktops from your computer to iPhone, iPad, Mac, and Apple Vision Pro. Works with Sunshine and NVIDIA GameStream hosts.")
             }
 
             Section {
                 Link(destination: Self.sourceURL) {
-                    Label("源代码", systemImage: "chevron.left.forwardslash.chevron.right")
+                    Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
 
                 Link(destination: Self.privacyURL) {
-                    Label("隐私政策", systemImage: "hand.raised")
+                    Label("Privacy Policy", systemImage: "hand.raised")
                 }
 
                 NavigationLink {
                     LicenseTextView(title: "GNU GPL v3", resource: "GPL-3.0")
                 } label: {
-                    Label("许可证", systemImage: "doc.text")
+                    Label("License", systemImage: "doc.text")
                 }
             } header: {
-                Text("开源")
+                Text("Open Source")
             } footer: {
-                Text("Starlight 是自由软件，以 GNU 通用公共许可证第 3 版（GPLv3）发布。你可以在该许可证的条款下获取、修改和再分发它的源代码。本软件不提供任何担保。")
+                Text("Starlight is free software released under the GNU General Public License v3 (GPLv3). You can obtain, modify, and redistribute its source code under the terms of that license. It comes with no warranty.")
             }
 
             Section {
@@ -58,13 +58,13 @@ struct AboutView: View {
                     }
                 }
             } header: {
-                Text("致谢")
+                Text("Acknowledgements")
             } footer: {
-                Text("串流协议基于 Moonlight 项目的 moonlight-common-c。Starlight 是独立项目，与 Moonlight、NVIDIA 和 Sunshine 没有关联。")
+                Text("The streaming protocol is based on moonlight-common-c from the Moonlight project. Starlight is an independent project and isn't affiliated with Moonlight, NVIDIA, or Sunshine.")
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("关于")
+        .navigationTitle("About")
     }
 
     private static var version: String {
