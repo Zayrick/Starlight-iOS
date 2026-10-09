@@ -14,7 +14,8 @@ xcodebuild -project Starlight.xcodeproj -scheme Starlight \
 # 另两个平台：'generic/platform=macOS'、'generic/platform=visionOS Simulator'
 ```
 
-- 没有单元测试（`StarlightTests` 目标存在但目录为空）；`StarlightUITests` 只有一个 iOS UI 测试，按英文标签 `"Search"` 查找按钮，需在英文环境运行。
+- 没有单元测试（`StarlightTests` 目标存在但目录为空）；`StarlightUITests` 中 `StarlightUITests.swift` 只有一个 iOS UI 测试，按英文标签 `"Search"` 查找按钮，需在英文环境运行。
+- App Store 截图用 `scripts/screenshots.sh` 生成（iPhone、iPad × 四种语言，输出到 `Screenshots/`）。它运行 `AppStoreScreenshots` 测试，依赖 DEBUG 构建下的 `-ScreenshotMode` 启动参数：`ScreenshotMode.swift` 提供示例主机、应用和串流画面，代替网络。改动 `HostStore`、`StreamSession` 的网络路径时保留这些分支。
 - 部署目标 26.5（iOS / macOS / visionOS），可直接使用 Liquid Glass 等 26 系列 API（如 `glassEffect`、`.glassProminent`）。
 
 ## 项目结构

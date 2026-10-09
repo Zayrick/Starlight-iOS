@@ -371,6 +371,35 @@
         }
       }
     },
+    "App %lld" : {
+      "comment" : "Sample app name in the App Store screenshots",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用 %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App %lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App %lld"
+          }
+        }
+      }
+    },
     "Audio" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1229,6 +1258,29 @@
         }
       }
     },
+    "Gaming PC" : {
+      "comment" : "Sample host name in the App Store screenshots",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "游戏电脑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遊戲電腦"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遊戲電腦"
+          }
+        }
+      }
+    },
     "H.264 doesn't support HDR." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1536,6 +1588,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有限"
+          }
+        }
+      }
+    },
+    "Living Room PC" : {
+      "comment" : "Sample host name in the App Store screenshots",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客厅电脑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客廳電腦"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客廳電腦"
           }
         }
       }
@@ -1866,6 +1941,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚未與此主機配對。"
+          }
+        }
+      }
+    },
+    "Office PC" : {
+      "comment" : "Sample host name in the App Store screenshots",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "办公室电脑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辦公室電腦"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辦公室電腦"
           }
         }
       }
@@ -2973,6 +3071,29 @@
         }
       }
     },
+    "Stream Picture" : {
+      "comment" : "Placeholder for the host's picture in the App Store screenshots",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "串流画面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "串流畫面"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "串流畫面"
+          }
+        }
+      }
+    },
     "Stream games and desktops from your computer to your device. Works with Sunshine and NVIDIA GameStream hosts." : {
       "localizations" : {
         "zh-Hans" : {
@@ -3943,6 +4064,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在等待畫面…"
+          }
+        }
+      }
+    },
+    "Workstation" : {
+      "comment" : "Sample host name in the App Store screenshots",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作站"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作站"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作站"
           }
         }
       }

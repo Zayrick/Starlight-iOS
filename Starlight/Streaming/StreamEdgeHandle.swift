@@ -38,6 +38,7 @@ struct StreamEdgeHandle: UIViewRepresentable {
         // Without anything to open, there's nothing to offer VoiceOver
         view.isAccessibilityElement = onActivate != nil
         view.accessibilityLabel = title
+        view.accessibilityIdentifier = edge == .leading ? "streamOptionsHandle" : "keyboardHandle"
         view.onPull = onPull
         view.onRelease = onRelease
         view.onActivate = onActivate

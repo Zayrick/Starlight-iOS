@@ -48,6 +48,7 @@ struct DevicesView: View {
                         DeviceCard(host: host)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier(host.id)
                 }
             }
         }

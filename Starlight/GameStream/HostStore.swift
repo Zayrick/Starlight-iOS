@@ -43,6 +43,10 @@ final class HostStore {
     init() {
         // Status and pair state are runtime only: they start unknown and are
         // determined by the first real handshake with each host
+        if ScreenshotMode.isEnabled {
+            hosts = ScreenshotMode.hosts
+            return
+        }
         hosts = Self.loadHosts()
         discovery.onResolve = { [weak self] address in
             self?.probeDiscoveredAddress(address)
@@ -56,6 +60,7 @@ final class HostStore {
     // MARK: - Discovery & polling
 
     func start() {
+        guard !ScreenshotMode.isEnabled else { return }
         discovery.start()
         guard pollTask == nil else { return }
         pollTask = Task { [weak self] in
@@ -181,6 +186,11 @@ final class HostStore {
 
     func startPairing(hostID: String) {
         guard let host = host(id: hostID) else { return }
+        if ScreenshotMode.isEnabled {
+            // Stays on the PIN, as if waiting for the host
+            pairing = Pairing(hostID: hostID, pin: ScreenshotMode.pin)
+            return
+        }
 
         pairingTask?.cancel()
         let pin = PairingSession.generatePIN()
@@ -234,6 +244,7 @@ final class HostStore {
     // MARK: - Apps
 
     func refreshApps(hostID: String) async {
+        guard !ScreenshotMode.isEnabled else { return }
         guard let host = host(id: hostID), appListStates[hostID] != .loading else { return }
         guard host.serverCertificate != nil, let address = host.displayAddress else {
             appListStates[hostID] = .failed(GameStreamError.notPaired.localizedDescription)
@@ -269,6 +280,10 @@ final class HostStore {
 
     /// Quits the app running on a host.
     func quitApp(hostID: String) async throws {
+        if ScreenshotMode.isEnabled {
+            update(hostID) { $0.currentGameID = nil }
+            return
+        }
         guard let host = host(id: hostID), let address = host.displayAddress else {
             throw GameStreamError.unreachable(String(localized: "No host address is available."))
         }
@@ -286,6 +301,9 @@ final class HostStore {
     /// Decoded, downsampled box art of a connected host. Concurrent requests
     /// for the same app share one load.
     func artwork(for app: StreamApp, hostID: String) async -> CGImage? {
+        if ScreenshotMode.isEnabled {
+            return ScreenshotMode.artwork(for: app)
+        }
         let key = ArtworkKey(hostID: hostID, appID: app.id)
         if let image = artworkImages[key] {
             return image
@@ -342,6 +360,8 @@ final class HostStore {
     }
 
     private func saveHosts() {
+        // Sample hosts must not replace the real ones
+        guard !ScreenshotMode.isEnabled else { return }
         let file = Self.hostsFile
         do {
             try FileManager.default.createDirectory(

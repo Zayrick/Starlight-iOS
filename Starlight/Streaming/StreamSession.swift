@@ -79,6 +79,12 @@ final class StreamSession: Identifiable {
 
     func start() {
         guard launchTask == nil else { return }
+        if ScreenshotMode.isEnabled {
+            phase = .streaming
+            connectedAt = .now
+            statistics = ScreenshotMode.statistics
+            return
+        }
         videoRenderer.onFirstFrame = { [weak self] in
             guard let self, !phase.isFinished else { return }
             phase = .streaming

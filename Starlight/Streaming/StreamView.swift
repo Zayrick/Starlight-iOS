@@ -37,6 +37,10 @@ struct StreamView: View {
             )
             .opacity(session.phase == .streaming ? 1 : 0)
 
+            if ScreenshotMode.isEnabled {
+                ScreenshotStreamPicture(appName: session.app.name)
+            }
+
             statusOverlay
 
 #if os(iOS)

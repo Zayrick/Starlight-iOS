@@ -290,6 +290,7 @@ private struct RunningAppCard: View {
 
             Button("Resume", systemImage: "play.fill", action: resume)
                 .prominentButtonStyle()
+                .accessibilityIdentifier("resume")
 
             Button(role: .destructive, action: quit) {
                 if isQuitting {
