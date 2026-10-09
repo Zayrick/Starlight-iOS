@@ -1,0 +1,29 @@
+{
+  "fill": {
+    "solid": "srgb:0.33725,0.36078,0.39216,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "star.svg",
+          "name": "star",
+          "fill": {
+            "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}
